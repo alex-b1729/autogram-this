@@ -1,5 +1,7 @@
+import sys
 import string
-from collections import defaultdict
+import random
+from time import perf_counter
 
 
 NUM_WORDS = {
@@ -43,7 +45,7 @@ def num_2_words(num):
     elif num % 10 == 0 and num < 100:
         return NUM_WORDS[str(num)]
     elif num < 100:
-        return NUM_WORDS[str(num // 10) + '0'] + ' ' + NUM_WORDS[str(num % 10)]
+        return NUM_WORDS[str(num // 10) + '0'] + '-' + NUM_WORDS[str(num % 10)]
     elif num % 100 == 0 and num < 1000:
         return NUM_WORDS[str(num // 100)] + ' ' + 'hundred'
     elif num < 1000:
@@ -59,66 +61,80 @@ def num_2_words(num):
 
 
 class Autogram(object):
-    def __init__(self, preamble: str = None):
-        self.preamble = preamble if preamble else 'This sentence contains'
+    def __init__(self):
+        self.preamble = "This sentence contains"
 
-        self.counts: dict[str: int] = self.count_occurences(self.preamble)
+        self.counts = self.count_occurences(self.preamble)
+
+        self.epoch = 0
+        self.update_all_counts = True
 
         # options
-        include_finanal_and = False
+        self.make_plural = True
+        self.include_final_and = True
+        # self.include_punctuation = False
+
+    def counts_as_phrases(self, counts: dict) -> list:
+        return [f'''{num_2_words(count)} {letter}{"'s" * (count > 1) if self.make_plural else ''}'''
+                for letter, count in counts.items() if count != 0]
 
     @property
     def sentence(self) -> str:
         phrases = self.counts_as_phrases(self.counts)
-        return f'{self.preamble} {", ".join(phrases[:-1])}, and {phrases[-1]}. '
+        s = self.preamble + ' ' if self.preamble else ''
+        s += ", ".join(phrases[:-1])
+        if self.include_final_and:
+            s += ' and ' + phrases[-1]
+        else:
+            s += ', ' + phrases[-1]
+        return s
 
     @property
     def is_autogram(self) -> bool:
         counts = self.count_occurences(self.sentence)
         return counts == self.counts
 
-    def __getattr__(self, item):
-        if item in string.ascii_lowercase:
-            return self.counts[item]
-        else:
-            raise AttributeError(f"'Autogram' object has no attribute '{item}'")
-
     def count_occurences(self, s: str) -> dict:
-        counts = defaultdict(int)
-        for letter in string.ascii_lowercase:
-            c = s.lower().count(letter)
-            if c > 0:
-                counts[letter] = c #+ 1  # +1? since stating the letter adds to it's count
-        return counts
-
-    def counts_as_phrases(self, counts: dict) -> list:
-        return [f'''{num_2_words(count)} {letter}{"'s" * (count > 1)}'''
-                for letter, count in counts.items() if count != 0]
+        return {
+            letter: s.lower().count(letter)
+            for letter in string.ascii_lowercase
+            if s.lower().find(letter) != -1
+        }
 
     def update_counts(self):
-        self.counts = self.count_occurences(self.sentence)
-        # phrases = self.counts_as_phrases(self.counts)
-        # self.intermediate_autogram = f'{self.preamble} {", ".join(phrases[:-1])}, and {phrases[-1]}. '
+        # Lee Sallows suggests alternately updating all letter counts or a random letter's count
+        if self.update_all_counts:
+            self.counts = self.count_occurences(self.sentence)
+        else:
+            letter = random.choice(list(self.counts.keys()))
+            self.counts[letter] = self.sentence.lower().count(letter)
+        self.update_all_counts = not self.update_all_counts
+        self.epoch += 1
 
-    def iter_sentence(self):
-        current_sentence = self.sentence + ' '
-        iter_counts = defaultdict(int)
-        for letter in string.ascii_lowercase:
-            new_count = current_sentence.lower().count(letter)
+    def iter_sentences(self):
+        sys.stdout.write('Iterating sentences to find an autogram.\n')
+        sys.stdout.write(f'Starting sentence: "{self.sentence}"\n')
+        print_epoch_counter = 0
+        t0 = perf_counter()
 
-            new_sentence = current_sentence + f'''{num_2_words(c)} {letter}{"'s" * (c > 1)}, '''
-            c_with_letter = new_sentence.lower().count(letter)
+        while not self.is_autogram:
+            # print(self.sentence)
+            # print(print_epoch_counter)
+            self.update_counts()
+            if print_epoch_counter > 9998:
+                sys.stdout.write(f'\rEpoch: {self.epoch:,}')
+                print_epoch_counter = -1
+            print_epoch_counter += 1
 
+        t1 = perf_counter()
+        t = t1 - t0
+        sys.stdout.write(f'\rEpoch: {self.epoch:,}\n')
+        sys.stdout.write('Found an autogram!\n')
+        sys.stdout.write(f'"{self.sentence}"\n')
+        sys.stdout.write(f'Raw count dictionary: {self.counts}\n')
+        sys.stdout.write(f'Total time: {t//60:.0f} minutes {t%60:.0f} seconds\n')
 
 
 if __name__ == '__main__':
     ag = Autogram()
-    print('counts:', ag.counts)
-    print('sentence:', ag.sentence)
-    print('autogram:', ag.is_autogram)
-
-    print('\n--- update ---')
-    ag.update_counts()
-    print('counts:', ag.counts)
-    print('sentence:', ag.sentence)
-    print('autogram:', ag.is_autogram)
+    ag.iter_sentences()
