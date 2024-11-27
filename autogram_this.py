@@ -59,18 +59,36 @@ def num_2_words(num):
 
 
 class Autogram(object):
-    def __init__(self, preamble: str):
-        self.preamble = preamble
+    def __init__(self, preamble: str = None):
+        self.preamble = preamble if preamble else 'This sentence contains'
 
-        self.counts = self.count_occurences(self.preamble)
-        self.intermediate_autogram = f'{self.preamble}'
+        self.counts: dict[str: int] = self.count_occurences(self.preamble)
+
+        # options
+        include_finanal_and = False
+
+    @property
+    def sentence(self) -> str:
+        phrases = self.counts_as_phrases(self.counts)
+        return f'{self.preamble} {", ".join(phrases[:-1])}, and {phrases[-1]}. '
+
+    @property
+    def is_autogram(self) -> bool:
+        counts = self.count_occurences(self.sentence)
+        return counts == self.counts
+
+    def __getattr__(self, item):
+        if item in string.ascii_lowercase:
+            return self.counts[item]
+        else:
+            raise AttributeError(f"'Autogram' object has no attribute '{item}'")
 
     def count_occurences(self, s: str) -> dict:
         counts = defaultdict(int)
         for letter in string.ascii_lowercase:
             c = s.lower().count(letter)
             if c > 0:
-                counts[letter] = c #+ 1  # +1 since stating the letter adds to it's count
+                counts[letter] = c #+ 1  # +1? since stating the letter adds to it's count
         return counts
 
     def counts_as_phrases(self, counts: dict) -> list:
@@ -78,18 +96,29 @@ class Autogram(object):
                 for letter, count in counts.items() if count != 0]
 
     def update_counts(self):
-        self.counts = self.count_occurences(self.intermediate_autogram)
-        phrases = self.counts_as_phrases(self.counts)
-        self.intermediate_autogram = f'{self.preamble} {", ".join(phrases[:-1])}, and {phrases[-1]}. '
+        self.counts = self.count_occurences(self.sentence)
+        # phrases = self.counts_as_phrases(self.counts)
+        # self.intermediate_autogram = f'{self.preamble} {", ".join(phrases[:-1])}, and {phrases[-1]}. '
+
+    def iter_sentence(self):
+        current_sentence = self.sentence + ' '
+        iter_counts = defaultdict(int)
+        for letter in string.ascii_lowercase:
+            new_count = current_sentence.lower().count(letter)
+
+            new_sentence = current_sentence + f'''{num_2_words(c)} {letter}{"'s" * (c > 1)}, '''
+            c_with_letter = new_sentence.lower().count(letter)
+
 
 
 if __name__ == '__main__':
-    ag = Autogram('This sentence contains')
-    ag.update_counts()
-    print(ag.counts)
-    print(ag.intermediate_autogram)
+    ag = Autogram()
+    print('counts:', ag.counts)
+    print('sentence:', ag.sentence)
+    print('autogram:', ag.is_autogram)
 
-    print('--- update ---')
+    print('\n--- update ---')
     ag.update_counts()
-    print(ag.counts)
-    print(ag.intermediate_autogram)
+    print('counts:', ag.counts)
+    print('sentence:', ag.sentence)
+    print('autogram:', ag.is_autogram)
