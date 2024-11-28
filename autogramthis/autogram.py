@@ -128,7 +128,7 @@ class Autogram(object):
         self.update_all_counts = not self.update_all_counts
         self.epoch += 1
 
-    def iter_sentences(self):
+    def search(self):
         self.init_counts()
         sys.stdout.write(f'Iterating sentences to find an {"autogram" if not self.is_pangram else "pangram"}\n')
         sys.stdout.write(f'Starting sentence: {self.sentence}\n')
@@ -154,4 +154,4 @@ class Autogram(object):
 if __name__ == '__main__':
     ag = Autogram('Spam, Spam, Spam,', 'eggs, and Spam.')
     ag.include_final_and = False
-    ag.iter_sentences()
+    ag.search()

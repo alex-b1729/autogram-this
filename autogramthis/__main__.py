@@ -43,4 +43,4 @@ ag = Autogram(args['prefix'], args['suffix'])
 ag.make_plural = not args['make_singular']
 ag.include_final_and = not args['no_and']
 ag.is_pangram = args['pangram']
-ag.iter_sentences()
+ag.search()
