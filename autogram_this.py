@@ -62,8 +62,9 @@ def num_2_words(num):
 
 
 class Autogram(object):
-    def __init__(self, prefix: str = ''):
-        self.prefix = prefix if prefix.strip() != '' else None
+    def __init__(self, prefix: str = '', suffix: str = ''):
+        self.prefix = prefix
+        self.suffix = suffix
 
         self.epoch = 0
         self.update_all_counts = True
@@ -80,8 +81,8 @@ class Autogram(object):
         if self.is_pangram:
             self.counts = {letter: 1 for letter in string.ascii_lowercase}
         else:
-            if self.prefix:
-                self.counts = self.count_occurences(self.prefix)
+            if self.prefix or self.suffix:
+                self.counts = self.count_occurences(self.prefix + self.suffix)
             else:
                 self.counts = defaultdict(int)
                 self.counts['g'] += 1
@@ -99,7 +100,10 @@ class Autogram(object):
             s += ', and ' + phrases[-1]
         else:
             s += ', ' + phrases[-1]
-        s += '.' if self.prefix else ''
+        if self.suffix:
+            s += ', ' + self.suffix
+        elif self.prefix:
+            s += '.'
         return s
 
     @property
@@ -148,5 +152,6 @@ class Autogram(object):
 
 
 if __name__ == '__main__':
-    ag = Autogram('This sentence contains')
+    ag = Autogram('Spam, Spam, Spam,', 'eggs, and Spam.')
+    ag.include_final_and = False
     ag.iter_sentences()
