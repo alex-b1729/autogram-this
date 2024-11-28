@@ -1,9 +1,9 @@
 import argparse
-from .autogram_this import Autogram
+from .autogram import Autogram
 
 
 parser = argparse.ArgumentParser(
-    prog='autogram-this',
+    prog='autogramthis',
     description='Searches for an autogram from an optional starting string.',
 )
 parser.add_argument(
