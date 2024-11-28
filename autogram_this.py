@@ -74,6 +74,9 @@ class Autogram(object):
         self.is_pangram = False
         # self.include_punctuation = False
 
+        self.counts = defaultdict(int)
+
+    def init_counts(self):
         if self.is_pangram:
             self.counts = {letter: 1 for letter in string.ascii_lowercase}
         else:
@@ -122,7 +125,8 @@ class Autogram(object):
         self.epoch += 1
 
     def iter_sentences(self):
-        sys.stdout.write('Iterating sentences to find an autogram.\n')
+        self.init_counts()
+        sys.stdout.write(f'Iterating sentences to find an {"autogram" if not self.is_pangram else "pangram"}\n')
         sys.stdout.write(f'Starting sentence: {self.sentence}\n')
         print_epoch_counter = 0
         t0 = perf_counter()
