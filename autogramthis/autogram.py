@@ -62,6 +62,54 @@ def num_2_words(num):
 
 
 class Autogram(object):
+    """A class that helps search for autograms.
+
+    ...
+
+    Parameters
+    ----------
+    prefix : str, optional
+        The string to start the autogram.
+    suffix : str, optional
+        The string that ends the autogram.
+
+    Attributes
+    ----------
+    sentence : str
+        Peroperty: A sentence generated using the current `counts` mapping.
+    is_autogram : bool
+        Property: True if `sentence` is an autogram
+    make_plural : bool
+        If True, appends a 's to the end of letters with count greater than 1. (default True)
+    include_final_and : bool
+        If True, add the word 'and' before the last letter count. (default True)
+    is_pangram : bool
+        If True, search for autograms where all letters of the alphabet are included. (default False)
+    epoch : int
+        The number of sentences tried during search.
+    update_all_counts : bool
+        If True, update all letter counts on next epoch, otherwise update one, random letter's count.
+    counts : dict[str, int]
+        Maps lower case letters to their count in the current sentence.
+        Only includes letters with count > 0.
+
+    Methods
+    -------
+    init_counts()
+        Initiates the `count` attribute with the letter counts in `prefix + suffix`.
+    counts_as_phrases(counts: dict) -> list
+        Takes a mapping between letters to counts and outputs these counts as a comma
+        delimited list with cardinal number names.
+    count_occurrences(s: str) -> dict
+        Take a string and returns a mapping from lowercase chars to their count in the sentence.
+    update_counts()
+        Updates the `counts` dictionary by alternatively updating all letters or one random letter
+        as determined by the `update_all_counts` attribute.
+    search()
+        Repeatedly applies `update_counts()` until an autogram is found.
+        Prints to stdout the initial sentence, the number of epochs (updated every 10,000),
+        the time taken, the dictionary of letter to counts in the final solution, and the autogram.
+    """
     def __init__(self, prefix: str = '', suffix: str = ''):
         self.prefix = prefix
         self.suffix = suffix
@@ -75,17 +123,17 @@ class Autogram(object):
         self.is_pangram = False
         # self.include_punctuation = False
 
-        self.counts = defaultdict(int)
+        self.counts: dict[str, int] = defaultdict(int)
 
     def init_counts(self):
         if self.is_pangram:
             self.counts = {letter: 1 for letter in string.ascii_lowercase}
         else:
             if self.prefix or self.suffix:
-                self.counts = self.count_occurences(self.prefix + self.suffix)
+                self.counts = self.count_occurrences(self.prefix + self.suffix)
             else:
                 self.counts = defaultdict(int)
-                self.counts['g'] += 1
+                self.counts[random.choice(string.ascii_lowercase)] += 1
 
     def counts_as_phrases(self, counts: dict) -> list:
         return [f'''{num_2_words(count)} {letter}{"'s" * (count > 1) if self.make_plural else ''}'''
@@ -108,10 +156,10 @@ class Autogram(object):
 
     @property
     def is_autogram(self) -> bool:
-        counts = self.count_occurences(self.sentence)
+        counts = self.count_occurrences(self.sentence)
         return counts == self.counts
 
-    def count_occurences(self, s: str) -> dict:
+    def count_occurrences(self, s: str) -> dict:
         return {
             letter: s.lower().count(letter)
             for letter in string.ascii_lowercase
@@ -121,7 +169,7 @@ class Autogram(object):
     def update_counts(self):
         # Lee Sallows suggests alternately updating all letter counts or a random letter's count
         if self.update_all_counts:
-            self.counts = self.count_occurences(self.sentence)
+            self.counts = self.count_occurrences(self.sentence)
         else:
             letter = random.choice(list(self.counts.keys()))
             self.counts[letter] = self.sentence.lower().count(letter)
@@ -130,6 +178,7 @@ class Autogram(object):
 
     def search(self):
         self.init_counts()
+        self.epoch = 0
         sys.stdout.write(f'Iterating sentences to find an {"autogram" if not self.is_pangram else "pangram"}\n')
         sys.stdout.write(f'Starting sentence: {self.sentence}\n')
         print_epoch_counter = 0
@@ -149,6 +198,7 @@ class Autogram(object):
         sys.stdout.write(f'Total time: {t // 60:.0f} minutes {t % 60:.0f} seconds\n')
         sys.stdout.write(f'Raw count dictionary: {self.counts}\n')
         sys.stdout.write(f'\n{self.sentence}\n\n')
+        return self.sentence
 
 
 if __name__ == '__main__':
