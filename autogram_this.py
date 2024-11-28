@@ -62,8 +62,8 @@ def num_2_words(num):
 
 
 class Autogram(object):
-    def __init__(self, preamble: str = ''):
-        self.preamble = preamble if preamble.strip() != '' else None
+    def __init__(self, prefix: str = ''):
+        self.prefix = prefix if prefix.strip() != '' else None
 
         self.epoch = 0
         self.update_all_counts = True
@@ -80,8 +80,8 @@ class Autogram(object):
         if self.is_pangram:
             self.counts = {letter: 1 for letter in string.ascii_lowercase}
         else:
-            if self.preamble:
-                self.counts = self.count_occurences(self.preamble)
+            if self.prefix:
+                self.counts = self.count_occurences(self.prefix)
             else:
                 self.counts = defaultdict(int)
                 self.counts['g'] += 1
@@ -93,13 +93,13 @@ class Autogram(object):
     @property
     def sentence(self) -> str:
         phrases = self.counts_as_phrases(self.counts)
-        s = self.preamble + ' ' if self.preamble else ''
+        s = self.prefix + ' ' if self.prefix else ''
         s += ", ".join(phrases[:-1])
         if self.include_final_and:
             s += ', and ' + phrases[-1]
         else:
             s += ', ' + phrases[-1]
-        s += '.' if self.preamble else ''
+        s += '.' if self.prefix else ''
         return s
 
     @property

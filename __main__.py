@@ -4,10 +4,10 @@ from .autogram_this import Autogram
 
 parser = argparse.ArgumentParser(
     prog='autogram-this',
-    description='Searches for an autogram with an optional starting preamble.',
+    description='Searches for an autogram from an optional starting string.',
 )
 parser.add_argument(
-    'preamble',
+    'prefix',
     type=str,
     nargs='?',
     default='',
@@ -32,7 +32,7 @@ parser.add_argument(
 
 args = vars(parser.parse_args())
 
-ag = Autogram(args['preamble'])
+ag = Autogram(args['prefix'])
 ag.make_plural = not args['make_singular']
 ag.include_final_and = not args['no_and']
 ag.is_pangram = args['pangram']
