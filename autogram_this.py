@@ -96,7 +96,7 @@ class Autogram(object):
             s += ' and ' + phrases[-1]
         else:
             s += ', ' + phrases[-1]
-        return s
+        return s + '.'
 
     @property
     def is_autogram(self) -> bool:
@@ -137,9 +137,9 @@ class Autogram(object):
         t = t1 - t0
         sys.stdout.write(f'\rEpoch: {self.epoch:,}\n')
         sys.stdout.write('Found an autogram!\n')
-        sys.stdout.write(f'{self.sentence}\n')
+        sys.stdout.write(f'Total time: {t // 60:.0f} minutes {t % 60:.0f} seconds\n')
         sys.stdout.write(f'Raw count dictionary: {self.counts}\n')
-        sys.stdout.write(f'Total time: {t//60:.0f} minutes {t%60:.0f} seconds\n')
+        sys.stdout.write(f'\n{self.sentence}\n\n')
 
 
 if __name__ == '__main__':
