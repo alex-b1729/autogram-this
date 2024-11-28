@@ -2,6 +2,7 @@ import sys
 import string
 import random
 from time import perf_counter
+from collections import defaultdict
 
 
 NUM_WORDS = {
@@ -61,10 +62,8 @@ def num_2_words(num):
 
 
 class Autogram(object):
-    def __init__(self):
-        self.preamble = "This sentence contains"
-
-        self.counts = self.count_occurences(self.preamble)
+    def __init__(self, preamble: str = None):
+        self.preamble = preamble
 
         self.epoch = 0
         self.update_all_counts = True
@@ -72,7 +71,17 @@ class Autogram(object):
         # options
         self.make_plural = True
         self.include_final_and = True
+        self.is_pangram = False
         # self.include_punctuation = False
+
+        if self.is_pangram:
+            self.counts = {letter: 1 for letter in string.ascii_lowercase}
+        else:
+            if self.preamble:
+                self.counts = self.count_occurences(self.preamble)
+            else:
+                self.counts = defaultdict(int)
+                self.counts['g'] += 1
 
     def counts_as_phrases(self, counts: dict) -> list:
         return [f'''{num_2_words(count)} {letter}{"'s" * (count > 1) if self.make_plural else ''}'''
@@ -113,13 +122,11 @@ class Autogram(object):
 
     def iter_sentences(self):
         sys.stdout.write('Iterating sentences to find an autogram.\n')
-        sys.stdout.write(f'Starting sentence: "{self.sentence}"\n')
+        sys.stdout.write(f'Starting sentence: {self.sentence}\n')
         print_epoch_counter = 0
         t0 = perf_counter()
 
         while not self.is_autogram:
-            # print(self.sentence)
-            # print(print_epoch_counter)
             self.update_counts()
             if print_epoch_counter > 9998:
                 sys.stdout.write(f'\rEpoch: {self.epoch:,}')
@@ -130,11 +137,11 @@ class Autogram(object):
         t = t1 - t0
         sys.stdout.write(f'\rEpoch: {self.epoch:,}\n')
         sys.stdout.write('Found an autogram!\n')
-        sys.stdout.write(f'"{self.sentence}"\n')
+        sys.stdout.write(f'{self.sentence}\n')
         sys.stdout.write(f'Raw count dictionary: {self.counts}\n')
         sys.stdout.write(f'Total time: {t//60:.0f} minutes {t%60:.0f} seconds\n')
 
 
 if __name__ == '__main__':
-    ag = Autogram()
+    ag = Autogram('This sentence contains')
     ag.iter_sentences()
