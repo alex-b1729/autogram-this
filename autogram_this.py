@@ -62,8 +62,8 @@ def num_2_words(num):
 
 
 class Autogram(object):
-    def __init__(self, preamble: str = None):
-        self.preamble = preamble
+    def __init__(self, preamble: str = ''):
+        self.preamble = preamble if preamble.strip() != '' else None
 
         self.epoch = 0
         self.update_all_counts = True
@@ -93,10 +93,11 @@ class Autogram(object):
         s = self.preamble + ' ' if self.preamble else ''
         s += ", ".join(phrases[:-1])
         if self.include_final_and:
-            s += ' and ' + phrases[-1]
+            s += ', and ' + phrases[-1]
         else:
             s += ', ' + phrases[-1]
-        return s + '.'
+        s += '.' if self.preamble else ''
+        return s
 
     @property
     def is_autogram(self) -> bool:
