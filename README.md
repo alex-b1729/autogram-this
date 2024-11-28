@@ -146,7 +146,11 @@ Returns the autogram.
 
 ## Fun Resources
 - [Lee Sallows](https://www.leesallows.com/index.php) invented autograms
+<<<<<<< HEAD
 - Lee Sallows paper on [reflexicons](https://www.leesallows.com/files/Reflexicons%20NEW(4c).pdf). 
+=======
+- Lee Sallows paper on [reflexicons]("https://www.leesallows.com/files/Reflexicons%20NEW(4c).pdf"). 
+>>>>>>> a453447512f8a5f4eb4180a60180b0bdf9189638
 Includes lots of fun variants and tips on searching for autograms. 
 - [Autogram](https://en.wikipedia.org/wiki/Autogram) on Wikipedia
 - [autograms.net](https://autograms.net/) has lots of autograms.
