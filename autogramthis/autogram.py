@@ -150,35 +150,38 @@ class Autogram(object):
     is_autogram : bool
         Property: True if `sentence` is an autogram
     make_plural : bool
-        If True, appends a 's to the end of letters with count greater than 1. (default True)
+        If True, appends a 's to the end of characters with count greater than 1. (default True)
     include_final_and : bool
-        If True, add the word 'and' before the last letter count. (default True)
+        If True, add the word 'and' before the last character count. (default True)
     is_pangram : bool
         If True, search for autograms where all letters of the alphabet are included. (default False)
     epoch : int
         The number of sentences tried during search.
     update_all_counts : bool
-        If True, update all letter counts on next epoch, otherwise update one, random letter's count.
+        If True, update all character counts on next epoch, otherwise update one, random character's count.
     counts : dict[str, int]
-        Maps lower case letters to their count in the current sentence.
-        Only includes letters with count > 0.
+        Maps lower case letters and chars to their count in the current sentence.
+        Only includes characters with count > 0.
 
     Methods
     -------
     init_counts()
-        Initiates the `count` attribute with the letter counts in `prefix + suffix`.
+        Initiates the `count` attribute with the character counts in `prefix + suffix`.
     counts_as_phrases(counts: dict) -> list
-        Takes a mapping between letters to counts and outputs these counts as a comma
+        Takes a mapping between characters to counts and outputs these counts as a comma
         delimited list with cardinal number names.
     count_occurrences(s: str) -> dict
         Take a string and returns a mapping from lowercase chars to their count in the sentence.
     update_counts()
-        Updates the `counts` dictionary by alternatively updating all letters or one random letter
+        Updates the `counts` dictionary by alternatively updating all characters or one random character
         as determined by the `update_all_counts` attribute.
     search()
         Repeatedly applies `update_counts()` until an autogram is found.
         Prints to stdout the initial sentence, the number of epochs (updated every 10,000),
-        the time taken, the dictionary of letter to counts in the final solution, and the autogram.
+        the time taken, the dictionary of character to counts in the final solution, and the autogram.
+    find_counts_and_chars(sentence: str) -> list[tuple[str, str]]
+        Regex searches for number words followed by single character, potentially followed by 's.
+        Returns a list of tuples in the format ('number words', 'character').
     """
     def __init__(self, prefix: str = '', suffix: str = ''):
         self.prefix = prefix
@@ -244,7 +247,7 @@ class Autogram(object):
         }
 
     def update_counts(self):
-        # Lee Sallows suggests alternately updating all letter counts or a random letter's count
+        # Lee Sallows suggests alternately updating all character counts or a random character's count
         if self.update_all_counts:
             self.counts = self.count_occurrences(self.sentence)
         else:
@@ -284,7 +287,7 @@ class Autogram(object):
             include_punctuation: bool = False,
             verbose: bool = False,
     ) -> list[tuple[str, str]]:
-        """Uses regex to match descriptions of a number of letters.
+        """Uses regex to match descriptions of a number of characters.
         E.g. "Twenty-two t's", "five b", "thirty one s"
         todo: only works for numbers < 100
         """
@@ -307,10 +310,10 @@ class Autogram(object):
                 if punct_word not in string.ascii_lowercase
             ])
             punctuation_re = punctuation_or + '|'
-        char_re = fr'(?P<letter>(?:{punctuation_re}[a-z])' + '{1}' + fr")'?(?=s)?s?"
+        char_re = fr'(?P<character>(?:{punctuation_re}[a-z])' + '{1}' + fr")'?(?=s)?s?"
 
         # find a word break, followed by a number word match, followed by whitespace,
-        # followed by a letter match
+        # followed by a character match
         number_char_re = fr'\b{number_re}\s{char_re}'
 
         p = re.compile(number_char_re)
@@ -339,7 +342,7 @@ class Autogram(object):
         # find sentence char counts
         counts_and_chars = Autogram.find_counts_and_chars(sentence_lower, include_punctuation=include_punctuation)
 
-        # create dictionary of letter counts as described by sentence
+        # create dictionary of character counts as described by sentence
         sentence_counts = {}
         for match in counts_and_chars:
             num_match = match[0]
@@ -364,7 +367,7 @@ class Autogram(object):
             else:
                 valid = False
                 print(f'{char}: Missing from sentence. True count: {counts[char]}.')
-        # any remaining letters that were mentioned by the sentence by somehow
+        # any remaining characters that were mentioned by the sentence by somehow
         # not found in the function counts mean the function didn't pick up on something it should've
         if sentence_counts:
             raise RuntimeError(
@@ -418,3 +421,6 @@ def run_validation_tests():
 
 if __name__ == '__main__':
     run_validation_tests()
+    ag = Autogram('An autogram with punctuation includes')
+    ag.include_punctuation = True
+    ag.search()

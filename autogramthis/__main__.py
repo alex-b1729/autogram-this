@@ -4,7 +4,7 @@ from .autogram import Autogram, PUNCTUATION_CHARS
 
 parser = argparse.ArgumentParser(
     prog='autogramthis',
-    description='Searches for an autogram from an optional starting string.',
+    description='Search for autograms from an optional starting or ending string or validate an autogram.',
 )
 parser.add_argument(
     'prefix',
@@ -29,7 +29,7 @@ parser.add_argument(
 parser.add_argument(
     '--make-singular',
     action='store_true',
-    help="Exclude the 's from letters with count greater than one",
+    help="Exclude the 's from characters with count greater than one",
 )
 parser.add_argument(
     '--no-and',
@@ -45,7 +45,8 @@ parser.add_argument(
 parser.add_argument(
     '--validate',
     type=str,
-    help='Validate whether the given string is an autogram. Other arguments are ignored if --validate is specified.',
+    help='Validate whether the given string is an autogram. '
+         'Arguments related to autogram search are ignored if --validate is specified.',
 )
 parser.add_argument(
     '-v',
