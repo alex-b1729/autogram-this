@@ -1,8 +1,16 @@
 # Autogram This
 
+A Python script that searches for and validates [autograms](https://en.wikipedia.org/wiki/Autogram).
+
+```commandline
+python3 -m autogramthis "The output of this Python script is composed of"
+```
 > `The output of this Python script is composed of two a's, three c's, three d's, thirty-one e's, nine f's, three g's, ten h's, twelve i's, two l's, two m's, fourteen n's, fourteen o's, five p's, eight r's, twenty-seven s's, twenty-five t's, five u's, eight v's, seven w's, one x, and five y's.`
 
-A Python script that turns a given phrase into an autogram. 
+```commandline
+python3 -m autogramthis --validate "The output of..."
+Valid autogram!
+```
 
 From [Wikipedia](https://en.wikipedia.org/wiki/Autogram):
 > An autogram is a sentence that describes itself in the sense of providing an inventory of its own characters.
@@ -14,6 +22,7 @@ From [Wikipedia](https://en.wikipedia.org/wiki/Autogram):
   - [Add a suffix to the autogram](#add-a-suffix-to-the-autogram)
   - [Find a reflexicon](#find-a-reflexicon)
   - [Find a pangram](#find-a-pangram)
+  - [Validation](#validation)
 - [Options](#options)
   - [Command line interface](#cli)
   - [`Autogram` class](#autogram-class)
@@ -60,8 +69,9 @@ python3 -m autogramthis "Spam, Spam, Spam" -s "eggs, and Spam." --no-and
 
 ### Find a *reflexicon*
 A *reflexicon* is a self-enumerating list of words.
-Finding these can take a while!
+Simply calling the script without passing the `prefix` argument or assigning a `suffix` will cause it to search for a list of cardinal number names and letters.
 The script starts iterating from a sentence in the form `, one {random.choice(string.ascii_lowercase)}`. 
+Finding these can take a while!
 ```commandline
 python3 -m autogramthis --make-singular --no-and
 ```
@@ -75,11 +85,27 @@ python3 -m autogramthis "The quick brown fox jumped over alphabet soup containin
 ```
 > `The quick brown fox jumped over alphabet soup containing five a's, three b's, three c's, three d's, thirty-two e's, six f's, two g's, ten h's, twelve i's, two j's, two k's, three l's, two m's, sixteen n's, sixteen o's, four p's, two q's, thirteen r's, thirty-four s's, twenty-seven t's, seven u's, seven v's, ten w's, six x's, four y's, and one z.`
 
+### Validation
+Validate if a string is an autogram using `--validate "<sentence to validate>"` in the command line or 
+using the `Autogram.validate(sentence: str)` function. 
+The `-v` command line flag sets validation output to verbose.
+
+```commandline
+$ python3 -m autogramthis --validate "twenty e, four f, one g, five h, three i, one l, ten n, seven o, seven r, three s, nine t, three u, four v, three w, one x, three y"
+e: INVALID. True count: 22, Sentence says: 20.
+h: INVALID. True count: 6, Sentence says: 5.
+o: INVALID. True count: 6, Sentence says: 7.
+r: INVALID. True count: 8, Sentence says: 7.
+w: INVALID. True count: 2, Sentence says: 3.
+y: INVALID. True count: 2, Sentence says: 3.
+Invalid!
+```
+
 ## Options
 ### CLI
 ```commandline
-$ python3 -m autogramthis --help          
 usage: autogramthis [-h] [-s SUFFIX] [-p] [--make-singular] [--no-and]
+                    [--validate VALIDATE]
                     [prefix]
 
 Searches for an autogram from an optional starting string.
@@ -97,6 +123,9 @@ options:
                         one
   --no-and              Exclude the word 'and' from before the last
                         character's count
+  --validate VALIDATE   Validate whether the given string is an autogram.
+                        Other arguments are ignored if --validate is
+                        specified.
 ```
 
 ### `Autogram` class
@@ -133,6 +162,14 @@ __Methods__
   Prints to stdout the initial sentence, the number of epochs (updated every 10,000),
   the time taken, the dictionary of letter to counts in the final solution, and the autogram.
   Returns the autogram. 
+
+__Static Methods__
+- `validate(sentence: str) -> bool`: 
+  Returns True if given sentence is an autogram.
+  Only works for sentences with letter counts < 100.
+- `find_counts_and_letters(sentence: str) -> list[tuple[str, str]]`:
+  Regex searches for number words followed by single letters, potentially followed by 's. 
+  Returns a list of tuples in the format ('number words', 'letter'). 
 
 ## Fun Resources
 - [Lee Sallows](https://www.leesallows.com/index.php) invented autograms
