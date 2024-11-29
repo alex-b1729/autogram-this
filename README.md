@@ -1,12 +1,6 @@
 # Autogram This
 
-```text
-The output of this Python script is composed of two a's, three c's, 
-three d's, thirty-one e's, nine f's, three g's, ten h's, twelve i's, 
-two l's, two m's, fourteen n's, fourteen o's, five p's, eight r's, 
-twenty-seven s's, twenty-five t's, five u's, eight v's, seven w's, 
-one x, and five y's.
-```
+> `The output of this Python script is composed of two a's, three c's, three d's, thirty-one e's, nine f's, three g's, ten h's, twelve i's, two l's, two m's, fourteen n's, fourteen o's, five p's, eight r's, twenty-seven s's, twenty-five t's, five u's, eight v's, seven w's, one x, and five y's.`
 
 A Python script that turns a given phrase into an autogram. 
 
@@ -62,12 +56,7 @@ The `-s` option sets the `suffix` and the `--no-and` flag removes the 'and' from
 ```commandline
 python3 -m autogramthis "Spam, Spam, Spam" -s "eggs, and Spam." --no-and
 ```
-```text
-Spam, Spam, Spam, six a's, two d's, twenty e's, seven f's, four g's, 
-five h's, ten i's, two l's, five m's, seven n's, six o's, five p's, 
-six r's, thirty-one s's, twelve t's, three u's, eight v's, five w's, 
-four x's, three y's, eggs, and Spam.
-```
+> `Spam, Spam, Spam, six a's, two d's, twenty e's, seven f's, four g's, five h's, ten i's, two l's, five m's, seven n's, six o's, five p's, six r's, thirty-one s's, twelve t's, three u's, eight v's, five w's, four x's, three y's, eggs, and Spam.`
 
 ### Find a *reflexicon*
 A *reflexicon* is a self-enumerating list of words.
@@ -76,10 +65,7 @@ The script starts iterating from a sentence in the form `, one {random.choice(st
 ```commandline
 python3 -m autogramthis --make-singular --no-and
 ```
-```text
-twenty e, four f, one g, five h, three i, one l, ten n, seven o, 
-seven r, three s, nine t, three u, four v, three w, one x, two y
-```
+> `twenty e, four f, one g, five h, three i, one l, ten n, seven o, seven r, three s, nine t, three u, four v, three w, one x, two y`
 
 ### Find a *pangram*
 A *pangram* is a sentence that uses every letter of the alphabet. 
@@ -87,13 +73,7 @@ Use the `-p` or `--pangram` flag in the command line.
 ```commandline
 python3 -m autogramthis "The quick brown fox jumped over alphabet soup containing" --pangram
 ```
-```text
-The quick brown fox jumped over alphabet soup containing five a's, three b's, 
-three c's, three d's, thirty-two e's, six f's, two g's, ten h's, twelve i's, 
-two j's, two k's, three l's, two m's, sixteen n's, sixteen o's, four p's, 
-two q's, thirteen r's, thirty-four s's, twenty-seven t's, seven u's, seven v's, 
-ten w's, six x's, four y's, and one z.
-```
+> `The quick brown fox jumped over alphabet soup containing five a's, three b's, three c's, three d's, thirty-two e's, six f's, two g's, ten h's, twelve i's, two j's, two k's, three l's, two m's, sixteen n's, sixteen o's, four p's, two q's, thirteen r's, thirty-four s's, twenty-seven t's, seven u's, seven v's, ten w's, six x's, four y's, and one z.`
 
 ## Options
 ### CLI
@@ -121,32 +101,42 @@ options:
 
 ### `Autogram` class
 __Parameters__
-- `prefix`: str, optional. The string to start the autogram.
-- `suffix`: str, optional. The string that ends the autogram.
+- `prefix : str` (optional) The string to start the autogram.
+- `suffix : str` (optional) The string that ends the autogram.
 
 __Properties__
-- `sentence`: str. A sentence generated using the current `counts` mapping.
-- `is_autogram`: bool. True if `sentence` is an autogram.
+- `sentence : str` A sentence generated using the current `counts` mapping.
+- `is_autogram : bool` True if `sentence` is an autogram.
+
+__Attributes__
+- `counts : dict[str, int]` Maps lower case letters to their count in the current sentence.
+  Only includes letters with count > 0.
+- `make_plural : bool` If True, appends a 's to the end of letters with count greater than 1. (default True)
+- `include_final_and : bool` If True, add the word 'and' before the last letter count. (default True)
+- `is_pangram : bool`  If True, search for autograms where all letters of the alphabet are included. (default False)
+- `epoch : int` The number of sentences tried during search.
+- `update_all_counts : bool` If True, update all letter counts on next epoch, 
+  otherwise update one, random letter's count.
 
 __Methods__
-- `init_counts()`: Initiates the `count` attribute with the letter counts in `prefix + suffix`.
+- `init_counts()`: Sets the `count` attribute to the letter counts in `prefix + suffix`.
 - `counts_as_phrases(counts: dict) -> list`: 
-Takes a mapping between letters to counts and outputs these counts as a comma 
-delimited list with cardinal number names.
+  Takes a mapping between letters to counts and outputs these counts as a comma 
+  delimited list with cardinal number names.
 - `count_occurrences(s: str) -> dict`: Take a string and returns a mapping from lowercase chars 
-to their count in the sentence.
+  to their count in the sentence.
 - `update_counts()`:
-Updates the `counts` dictionary by alternatively updating all letters or one random letter
-as determined by the `update_all_counts` attribute.
+  Updates the `counts` dictionary by alternatively updating all letters or one random letter
+  as determined by the `update_all_counts` attribute.
 - `search() -> str`:
-Repeatedly applies `update_counts()` until an autogram is found.
-Prints to stdout the initial sentence, the number of epochs (updated every 10,000),
-the time taken, the dictionary of letter to counts in the final solution, and the autogram.
-Returns the autogram. 
+  Repeatedly applies `update_counts()` until an autogram is found.
+  Prints to stdout the initial sentence, the number of epochs (updated every 10,000),
+  the time taken, the dictionary of letter to counts in the final solution, and the autogram.
+  Returns the autogram. 
 
 ## Fun Resources
 - [Lee Sallows](https://www.leesallows.com/index.php) invented autograms
 - Lee Sallows paper on [reflexicons](https://www.leesallows.com/files/Reflexicons%20NEW(4c).pdf). 
-Includes lots of fun variants and tips on searching for autograms. 
+  Includes lots of fun variants and tips on searching for autograms. 
 - [Autogram](https://en.wikipedia.org/wiki/Autogram) on Wikipedia
 - [autograms.net](https://autograms.net/) has lots of autograms.
