@@ -249,11 +249,38 @@ class Autogram(object):
         return self.sentence
 
     @staticmethod
+    def find_counts_and_letters(sentence: str) -> list[tuple[str, str]]:
+        """Uses regex to match descriptions of a number of letters.
+        E.g. "Twenty-two t's", "five b", "thirty one s"
+        todo: only works for numbers < 100
+        """
+        # number words that can stand on their own. e.g. 'two', five, 'thirteen', 'thirty', ...
+        single_word_numbers = [word for word in WORD_TO_INT]
+        # e.g. 'twenty', 'fifty'
+        leading_word_numbers = [word for word in WORD_TO_INT if WORD_TO_INT[word] >= 20]
+        leading_word_or = '|'.join(leading_word_numbers)
+        single_word_or = '|'.join(single_word_numbers)
+
+        # 0 or 1 of (leading word followed by a '-' or whitespace), followed by one single word
+        number_re = fr'(?P<number>(?:(?:{leading_word_or})[-\s]?)?(?:{single_word_or}))'
+
+        # one char from a-z, followed by 0 or 1 of "'" only if thats followed by an 's',
+        # followed by 0 or 1 's', followed by 0 or 1 ',' or '.'
+        letter_re = fr'(?P<letter>[a-z]' + '{1}' + fr")'?(?=s)?s?[,.]?"
+
+        # find a word break, followed by a number word match, followed by whitespace, followed by a letter match
+        number_letter_re = fr'\b{number_re}\s{letter_re}'
+
+        p = re.compile(number_letter_re)
+        return p.findall(sentence.lower())
+
+    @staticmethod
     def validate(
             sentence,
             include_punctuation: bool = False,
             verbose: bool = False,
     ) -> bool:
+        """Returns True if sentence is an autogram"""
         sentence_lower = sentence.lower()
         counts = {
             letter: sentence_lower.count(letter)
@@ -261,26 +288,18 @@ class Autogram(object):
             if sentence_lower.count(letter) > 0
         }
 
-        # find sentence letter counts with regex
-        letter_count_re = r"\b(?P<number>[efghilnorstuvwxy]+[-\s]?[efghilnorstuvwxy]+)\s(?P<letter>[a-z]{1})\b'?(?=s)?s?[,\.]?"
-        p = re.compile(letter_count_re)
-        letter_count_iter = p.finditer(sentence_lower)
+        # find sentence letter counts
+        counts_and_letters = Autogram.find_counts_and_letters(sentence_lower)
 
         # create dictionary of letter counts as described by sentence
         sentence_counts = {}
-        for match in letter_count_iter:
-            num_word = match.group('number')
-            # regex sometimes finds an extra, non-number word as the first word
-            # e.g. "(of two) (a)'s"
-            # if num_word[0] not in WORD_TO_INT:
-            #     num_word = num_word[1:]
-            sentence_counts[match.group('letter')] = words_2_num(num_word)
+        for match in counts_and_letters:
+            num_match = match[0]
+            letter_match = match[1]
+            sentence_counts[letter_match] = words_2_num(num_match)
 
         # compare function counts to sentence counts
         valid = True
-        incorrect_counts = {}
-        missing_counts = {}
-        # letters in the order they appear in sentence
         for letter in counts:
             if letter in sentence_counts:
                 sc = sentence_counts.pop(letter)
@@ -288,24 +307,22 @@ class Autogram(object):
                     if verbose: print(f'{letter}: {sc} verified')
                 else:
                     valid = False
-                    print(f'{letter}: INVALID. True count: {counts[letter]}, Sentence says {sc}')
-                    incorrect_counts[letter] = sc
+                    print(f'{letter}: INVALID. True count: {counts[letter]}, Sentence says: {sc}.')
             else:
                 valid = False
-                print(f'{letter}: Missing from sentence. True count {counts[letter]}')
+                print(f'{letter}: Missing from sentence. True count: {counts[letter]}.')
         # any remaining letters that were mentioned by the sentence by somehow
-        # not found in the function counts
+        # not found in the function counts mean the function didn't pick up on something it should've
         if sentence_counts:
             raise RuntimeError(
-                f'Sentence mentions {len(sentence_counts)} that were not found by function.\n{sentence_counts}'
+                f'Sentence mentions {len(sentence_counts)} letters that were not found by validate().\n'
+                f'{sentence_counts}'
             )
 
         return valid
 
 
-
-
-if __name__ == '__main__':
+def run_tests():
     sentences = [
         """Spam, Spam, Spam, six a's, two d's, twenty e's, seven f's, four g's, 
         five h's, ten i's, two l's, five m's, seven n's, six o's, five p's, 
@@ -329,7 +346,11 @@ if __name__ == '__main__':
         ten w's, six x's, four y's, and one z.""",
     ]
     for i, sentence in enumerate(sentences):
-        print(f'\n----------------- sentence {i+1} -----------------')
+        print(f'\n----------------- sentence {i + 1} -----------------')
         print(sentence)
-        is_valid = Autogram.validate(sentence, verbose=True)
+        is_valid = Autogram.validate(sentence, verbose=False)
         print('Valid!' if is_valid else 'Invalid!')
+
+
+if __name__ == '__main__':
+    run_tests()

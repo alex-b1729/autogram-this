@@ -36,11 +36,25 @@ parser.add_argument(
     action='store_true',
     help="Exclude the word 'and' from before the last character's count",
 )
+parser.add_argument(
+    '--validate',
+    type=str,
+    help='Validate whether the given string is an autogram. Other arguments are ignored if --validate is specified.',
+)
+parser.add_argument(
+    '-v',
+    action='store_true',
+    help='Verbose output when validating.'
+)
 
 args = vars(parser.parse_args())
 
-ag = Autogram(args['prefix'], args['suffix'])
-ag.make_plural = not args['make_singular']
-ag.include_final_and = not args['no_and']
-ag.is_pangram = args['pangram']
-ag.search()
+if args['validate']:  # validation
+    is_valid = Autogram.validate(args['validate'])
+    print('Valid autogram!' if is_valid else 'Invalid!')
+else:  # generation
+    ag = Autogram(args['prefix'], args['suffix'])
+    ag.make_plural = not args['make_singular']
+    ag.include_final_and = not args['no_and']
+    ag.is_pangram = args['pangram']
+    ag.search()
