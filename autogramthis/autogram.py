@@ -279,12 +279,16 @@ class Autogram(object):
         return self.sentence
 
     @staticmethod
-    def find_counts_and_chars(sentence: str) -> list[tuple[str, str]]:
+    def find_counts_and_chars(
+            sentence: str,
+            include_punctuation: bool = False,
+            verbose: bool = False,
+    ) -> list[tuple[str, str]]:
         """Uses regex to match descriptions of a number of letters.
         E.g. "Twenty-two t's", "five b", "thirty one s"
         todo: only works for numbers < 100
         """
-        # number words that can stand on their own. e.g. 'two', five, 'thirteen', 'thirty', ...
+        # number words that can stand on their own. e.g. 'two', 'thirteen', 'thirty', ...
         single_word_numbers = [word for word in WORD_TO_INT]
         # e.g. 'twenty', 'fifty'
         leading_word_numbers = [word for word in WORD_TO_INT if WORD_TO_INT[word] >= 20]
@@ -295,10 +299,18 @@ class Autogram(object):
         number_re = fr'(?P<number>(?:(?:{leading_word_or})[-\s]?)?(?:{single_word_or}))'
 
         # one char from a-z, followed by 0 or 1 of "'" only if thats followed by an 's',
-        # followed by 0 or 1 's', followed by 0 or 1 ',' or '.'
-        char_re = fr'(?P<letter>[a-z]' + '{1}' + fr")'?(?=s)?s?[,.]?"
+        # followed by 0 or 1 's'
+        punctuation_re = ''
+        if include_punctuation:
+            punctuation_or = '|'.join([
+                punct_word for punct_word in WORD_TO_CHAR
+                if punct_word not in string.ascii_lowercase
+            ])
+            punctuation_re = punctuation_or + '|'
+        char_re = fr'(?P<letter>(?:{punctuation_re}[a-z])' + '{1}' + fr")'?(?=s)?s?"
 
-        # find a word break, followed by a number word match, followed by whitespace, followed by a letter match
+        # find a word break, followed by a number word match, followed by whitespace,
+        # followed by a letter match
         number_char_re = fr'\b{number_re}\s{char_re}'
 
         p = re.compile(number_char_re)
@@ -309,9 +321,12 @@ class Autogram(object):
             sentence,
             include_punctuation: bool = False,
             verbose: bool = False,
+            double_verbose: bool = False,
     ) -> bool:
         """Returns True if sentence is an autogram"""
         sentence_lower = sentence.lower()
+        if double_verbose and not verbose:
+            verbose = True
         countable_chars = LETTER_CHARS
         if include_punctuation:
             countable_chars += PUNCTUATION_CHARS
@@ -321,8 +336,8 @@ class Autogram(object):
             if sentence_lower.count(char) > 0
         }
 
-        # find sentence letter counts
-        counts_and_chars = Autogram.find_counts_and_chars(sentence_lower)
+        # find sentence char counts
+        counts_and_chars = Autogram.find_counts_and_chars(sentence_lower, include_punctuation=include_punctuation)
 
         # create dictionary of letter counts as described by sentence
         sentence_counts = {}
@@ -330,6 +345,11 @@ class Autogram(object):
             num_match = match[0]
             char_match = match[1]
             sentence_counts[WORD_TO_CHAR[char_match]] = words_2_num(num_match)
+
+        if double_verbose:
+            print(f'Regex sentence counts: {counts_and_chars}')
+            print(f'Parsed sentence counts: {sentence_counts}')
+            print(f'function counts: {counts}')
 
         # compare function counts to sentence counts
         valid = True
@@ -348,42 +368,53 @@ class Autogram(object):
         # not found in the function counts mean the function didn't pick up on something it should've
         if sentence_counts:
             raise RuntimeError(
-                f'Sentence mentions {len(sentence_counts)} letters that were not found by validate().\n'
+                f'Sentence mentions {len(sentence_counts)} chars that were not found by validate().\n'
                 f'{sentence_counts}'
             )
 
         return valid
 
 
-def run_tests():
-    sentences = [
-        """Spam, Spam, Spam, six a's, two d's, twenty e's, seven f's, four g's, 
-        five h's, ten i's, two l's, five m's, seven n's, six o's, five p's, 
-        six r's, thirty-one s's, twelve t's, three u's, eight v's, five w's, 
-        four x's, three y's, eggs, and Spam.""",
-        """twenty e, four f, one g, five h, three i, one l, ten n, seven o, 
-        seven r, three s, nine t, three u, four v, three w, one x, two y""",
-        """The output of this Python script is composed of two a's, three c's, 
-        three d's, thirty-one e's, nine f's, three g's, ten h's, twelve i's, 
-        two l's, two m's, fourteen n's, fourteen o's, five p's, eight r's, 
-        twenty-seven s's, twenty-five t's, five u's, eight v's, seven w's, 
-        one x, and five y's.""",
-        """This sentence contains three a's, three c's, two d's, twenty-seven e's, 
-        four f's, one g, five h's, eleven i's, two l's, sixteen n's, seven o's, 
-        five r's, twenty-nine s's, sixteen t's, two u's, six v's, six w's, six x's, 
-        and three y's.""",
-        """The quick brown fox jumped over alphabet soup containing five a's, three b's, 
-        three c's, three d's, thirty-two e's, six f's, two g's, ten h's, twelve i's, 
-        two j's, two k's, three l's, two m's, sixteen n's, sixteen o's, four p's, 
-        two q's, thirteen r's, thirty-four s's, twenty-seven t's, seven u's, seven v's, 
-        ten w's, six x's, four y's, and one z.""",
+def run_validation_tests():
+    # first element is sentence, second is whether punctuation is counted
+    sentences: list[tuple[str, bool]] = [
+        ("""Spam, Spam, Spam, six a's, two d's, twenty e's, seven f's, four g's,
+        five h's, ten i's, two l's, five m's, seven n's, six o's, five p's,
+        six r's, thirty-one s's, twelve t's, three u's, eight v's, five w's,
+        four x's, three y's, eggs, and Spam.""", False),
+        ("""twenty e, four f, one g, five h, three i, one l, ten n, seven o,
+        seven r, three s, nine t, three u, four v, three w, one x, two y""", False),
+        ("""The output of this Python script is composed of two a's, three c's,
+        three d's, thirty-one e's, nine f's, three g's, ten h's, twelve i's,
+        two l's, two m's, fourteen n's, fourteen o's, five p's, eight r's,
+        twenty-seven s's, twenty-five t's, five u's, eight v's, seven w's,
+        one x, and five y's.""", False),
+        ("""This sentence contains three a's, three c's, two d's, twenty-seven e's,
+        four f's, one g, five h's, eleven i's, two l's, sixteen n's, seven o's,
+        five r's, twenty-nine s's, sixteen t's, two u's, six v's, six w's, six x's,
+        and three y's.""", False),
+        ("""The quick brown fox jumped over alphabet soup containing five a's, three b's,
+        three c's, three d's, thirty-two e's, six f's, two g's, ten h's, twelve i's,
+        two j's, two k's, three l's, two m's, sixteen n's, sixteen o's, four p's,
+        two q's, thirteen r's, thirty-four s's, twenty-seven t's, seven u's, seven v's,
+        ten w's, six x's, four y's, and one z.""", False),
+        ("""Only the fool would take trouble to verify that his sentence was composed 
+        of ten a's, three b's, four c's, four d's, forty-six e's, sixteen f's, 
+        four g's, thirteen h's, fifteen i's, two k's, nine l's, four m's, 
+        twenty-five n's, twenty-four o's, five p's, sixteen r's, forty-one s's, 
+        thirty-seven t's, ten u's, eight v's, eight w's, four x's, eleven y's, 
+        twenty-seven commas, twenty-three apostrophes, seven hyphens and, last but 
+        not least, a single !""", True),  # A Lee Sallow autogram
     ]
     for i, sentence in enumerate(sentences):
         print(f'\n----------------- sentence {i + 1} -----------------')
-        print(sentence)
-        is_valid = Autogram.validate(sentence, verbose=False)
+        print(sentence[0])
+        is_valid = Autogram.validate(
+            sentence[0],
+            include_punctuation=sentence[1],
+        )
         print('Valid!' if is_valid else 'Invalid!')
 
 
 if __name__ == '__main__':
-    run_tests()
+    run_validation_tests()
