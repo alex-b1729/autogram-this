@@ -109,6 +109,28 @@ def words_2_num(words: str) -> int:
     return num
 
 
+LETTER_CHARS = string.ascii_lowercase
+PUNCTUATION_CHARS = ',-\'.!'
+CHAR_TO_WORD = {letter: letter for letter in LETTER_CHARS}
+CHAR_TO_WORD.update({
+    ',': 'comma',
+    '-': 'hyphen',
+    '\'': 'apostrophe',
+    '.': 'period',
+    # below inconsistent with above but used to validate Sallow's autogram
+    # with punctuation from Hofstadter's 1982 "Metamagical Themas"
+    '!': '!',
+})
+WORD_TO_CHAR = {letter: letter for letter in LETTER_CHARS}
+WORD_TO_CHAR.update({
+    'comma': ',',
+    'hyphen': '-',
+    'apostrophe': '\'',
+    'period': '.',
+    '!': '!',
+})
+
+
 class Autogram(object):
     """A class that helps search for autograms.
 
@@ -169,23 +191,30 @@ class Autogram(object):
         self.make_plural = True
         self.include_final_and = True
         self.is_pangram = False
-        # self.include_punctuation = False
+        self.include_punctuation = False
+
+        self.countable_chars = LETTER_CHARS
 
         self.counts: dict[str, int] = defaultdict(int)
 
     def init_counts(self):
         if self.is_pangram:
-            self.counts = {letter: 1 for letter in string.ascii_lowercase}
+            self.counts = {letter: 1 for letter in LETTER_CHARS}
         else:
             if self.prefix or self.suffix:
                 self.counts = self.count_occurrences(self.prefix + self.suffix)
             else:
                 self.counts = defaultdict(int)
-                self.counts[random.choice(string.ascii_lowercase)] += 1
+                self.counts[random.choice(LETTER_CHARS)] += 1
 
-    def counts_as_phrases(self, counts: dict) -> list:
-        return [f'''{num_2_words(count)} {letter}{"'s" * (count > 1) if self.make_plural else ''}'''
-                for letter, count in counts.items() if count != 0]
+    def init_countable_chars(self):
+        self.countable_chars = LETTER_CHARS
+        if self.include_punctuation:
+            self.countable_chars += PUNCTUATION_CHARS
+
+    def counts_as_phrases(self, counts: dict[str, int]) -> list[str]:
+        return [f'''{num_2_words(count)} {CHAR_TO_WORD[char]}{"'s" * (count > 1) if self.make_plural else ''}'''
+                for char, count in counts.items() if count != 0]
 
     @property
     def sentence(self) -> str:
@@ -207,11 +236,11 @@ class Autogram(object):
         counts = self.count_occurrences(self.sentence)
         return counts == self.counts
 
-    def count_occurrences(self, s: str) -> dict:
+    def count_occurrences(self, s: str) -> dict[str, int]:
         return {
-            letter: s.lower().count(letter)
-            for letter in string.ascii_lowercase
-            if s.lower().find(letter) != -1
+            char: s.lower().count(char)
+            for char in self.countable_chars
+            if s.lower().find(char) != -1
         }
 
     def update_counts(self):
@@ -219,12 +248,13 @@ class Autogram(object):
         if self.update_all_counts:
             self.counts = self.count_occurrences(self.sentence)
         else:
-            letter = random.choice(list(self.counts.keys()))
-            self.counts[letter] = self.sentence.lower().count(letter)
+            char = random.choice(list(self.counts.keys()))
+            self.counts[char] = self.sentence.lower().count(char)
         self.update_all_counts = not self.update_all_counts
         self.epoch += 1
 
     def search(self):
+        self.init_countable_chars()
         self.init_counts()
         self.epoch = 0
         sys.stdout.write(f'Iterating sentences to find an {"autogram" if not self.is_pangram else "pangram"}\n')
@@ -249,7 +279,7 @@ class Autogram(object):
         return self.sentence
 
     @staticmethod
-    def find_counts_and_letters(sentence: str) -> list[tuple[str, str]]:
+    def find_counts_and_chars(sentence: str) -> list[tuple[str, str]]:
         """Uses regex to match descriptions of a number of letters.
         E.g. "Twenty-two t's", "five b", "thirty one s"
         todo: only works for numbers < 100
@@ -266,12 +296,12 @@ class Autogram(object):
 
         # one char from a-z, followed by 0 or 1 of "'" only if thats followed by an 's',
         # followed by 0 or 1 's', followed by 0 or 1 ',' or '.'
-        letter_re = fr'(?P<letter>[a-z]' + '{1}' + fr")'?(?=s)?s?[,.]?"
+        char_re = fr'(?P<letter>[a-z]' + '{1}' + fr")'?(?=s)?s?[,.]?"
 
         # find a word break, followed by a number word match, followed by whitespace, followed by a letter match
-        number_letter_re = fr'\b{number_re}\s{letter_re}'
+        number_char_re = fr'\b{number_re}\s{char_re}'
 
-        p = re.compile(number_letter_re)
+        p = re.compile(number_char_re)
         return p.findall(sentence.lower())
 
     @staticmethod
@@ -282,35 +312,38 @@ class Autogram(object):
     ) -> bool:
         """Returns True if sentence is an autogram"""
         sentence_lower = sentence.lower()
+        countable_chars = LETTER_CHARS
+        if include_punctuation:
+            countable_chars += PUNCTUATION_CHARS
         counts = {
-            letter: sentence_lower.count(letter)
-            for letter in string.ascii_lowercase
-            if sentence_lower.count(letter) > 0
+            char: sentence_lower.count(char)
+            for char in countable_chars
+            if sentence_lower.count(char) > 0
         }
 
         # find sentence letter counts
-        counts_and_letters = Autogram.find_counts_and_letters(sentence_lower)
+        counts_and_chars = Autogram.find_counts_and_chars(sentence_lower)
 
         # create dictionary of letter counts as described by sentence
         sentence_counts = {}
-        for match in counts_and_letters:
+        for match in counts_and_chars:
             num_match = match[0]
-            letter_match = match[1]
-            sentence_counts[letter_match] = words_2_num(num_match)
+            char_match = match[1]
+            sentence_counts[WORD_TO_CHAR[char_match]] = words_2_num(num_match)
 
         # compare function counts to sentence counts
         valid = True
-        for letter in counts:
-            if letter in sentence_counts:
-                sc = sentence_counts.pop(letter)
-                if counts[letter] == sc:
-                    if verbose: print(f'{letter}: {sc} verified')
+        for char in counts:
+            if char in sentence_counts:
+                sc = sentence_counts.pop(char)
+                if counts[char] == sc:
+                    if verbose: print(f'{char}: {sc} verified')
                 else:
                     valid = False
-                    print(f'{letter}: INVALID. True count: {counts[letter]}, Sentence says: {sc}.')
+                    print(f'{char}: INVALID. True count: {counts[char]}, Sentence says: {sc}.')
             else:
                 valid = False
-                print(f'{letter}: Missing from sentence. True count: {counts[letter]}.')
+                print(f'{char}: Missing from sentence. True count: {counts[char]}.')
         # any remaining letters that were mentioned by the sentence by somehow
         # not found in the function counts mean the function didn't pick up on something it should've
         if sentence_counts:
