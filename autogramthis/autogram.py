@@ -1,3 +1,4 @@
+import re
 import sys
 import string
 import random
@@ -5,7 +6,7 @@ from time import perf_counter
 from collections import defaultdict
 
 
-NUM_WORDS = {
+INT_TO_WORD = {
     '0': 'zero',
     '1': 'one',
     '2': 'two',
@@ -38,27 +39,74 @@ NUM_WORDS = {
     '90': 'ninety',
     }
 
+WORD_TO_INT = {
+    'zero': 0,
+    'single': 1,
+    'one': 1,
+    'two': 2,
+    'three': 3,
+    'four': 4,
+    'five': 5,
+    'six': 6,
+    'seven': 7,
+    'eight': 8,
+    'nine': 9,
 
-def num_2_words(num):
+    'ten': 10,
+    'eleven': 11,
+    'twelve': 12,
+    'thirteen': 13,
+    'fourteen': 14,
+    'fifteen': 15,
+    'sixteen': 16,
+    'seventeen': 17,
+    'eighteen': 18,
+    'nineteen': 19,
+
+    'twenty': 20,
+    'thirty': 30,
+    'forty': 40,
+    'fifty': 50,
+    'sixty': 60,
+    'seventy': 70,
+    'eighty': 80,
+    'ninety': 90,
+}
+
+
+def num_2_words(num: int) -> str:
     """source: https://stackoverflow.com/a/78060953"""
     if num <= 20:
-        return NUM_WORDS[str(num)]
+        return INT_TO_WORD[str(num)]
     elif num % 10 == 0 and num < 100:
-        return NUM_WORDS[str(num)]
+        return INT_TO_WORD[str(num)]
     elif num < 100:
-        return NUM_WORDS[str(num // 10) + '0'] + '-' + NUM_WORDS[str(num % 10)]
+        return INT_TO_WORD[str(num // 10) + '0'] + '-' + INT_TO_WORD[str(num % 10)]
     elif num % 100 == 0 and num < 1000:
-        return NUM_WORDS[str(num // 100)] + ' ' + 'hundred'
+        return INT_TO_WORD[str(num // 100)] + ' ' + 'hundred'
     elif num < 1000:
-        return NUM_WORDS[str(num // 100)] + ' hundred and ' + num_2_words(num % 100)
+        return INT_TO_WORD[str(num // 100)] + ' hundred and ' + num_2_words(num % 100)
     elif num % 1000 == 0 and num < 10000:
-        return NUM_WORDS[str(num // 1000)] + ' ' + 'thousand'
+        return INT_TO_WORD[str(num // 1000)] + ' ' + 'thousand'
     elif num < 10000:
-        return NUM_WORDS[str(num // 1000)] + ' thousand ' + num_2_words(num % 1000)
+        return INT_TO_WORD[str(num // 1000)] + ' thousand ' + num_2_words(num % 1000)
     elif num == 10000:
         return 'ten thousand'
     else:
         return 'more than ten thousand'
+
+
+def words_2_num(words: str) -> int:
+    # todo: parse words of nums > 99
+    word_list = [w.lower() for w in re.split(r'[-\s]+', words)]
+    if len(word_list) > 2:
+        raise NotImplementedError(
+            f'Cannot yet parse number words of greater than 2 words. {word_list} is too long.'
+        )
+    num = 0
+    for w in word_list:
+        num += WORD_TO_INT[w]
+    return num
 
 
 class Autogram(object):
@@ -200,8 +248,88 @@ class Autogram(object):
         sys.stdout.write(f'\n{self.sentence}\n\n')
         return self.sentence
 
+    @staticmethod
+    def validate(
+            sentence,
+            include_punctuation: bool = False,
+            verbose: bool = False,
+    ) -> bool:
+        sentence_lower = sentence.lower()
+        counts = {
+            letter: sentence_lower.count(letter)
+            for letter in string.ascii_lowercase
+            if sentence_lower.count(letter) > 0
+        }
+
+        # find sentence letter counts with regex
+        letter_count_re = r"\b(?P<number>[efghilnorstuvwxy]+[-\s]?[efghilnorstuvwxy]+)\s(?P<letter>[a-z]{1})\b'?(?=s)?s?[,\.]?"
+        p = re.compile(letter_count_re)
+        letter_count_iter = p.finditer(sentence_lower)
+
+        # create dictionary of letter counts as described by sentence
+        sentence_counts = {}
+        for match in letter_count_iter:
+            num_word = match.group('number')
+            # regex sometimes finds an extra, non-number word as the first word
+            # e.g. "(of two) (a)'s"
+            # if num_word[0] not in WORD_TO_INT:
+            #     num_word = num_word[1:]
+            sentence_counts[match.group('letter')] = words_2_num(num_word)
+
+        # compare function counts to sentence counts
+        valid = True
+        incorrect_counts = {}
+        missing_counts = {}
+        # letters in the order they appear in sentence
+        for letter in counts:
+            if letter in sentence_counts:
+                sc = sentence_counts.pop(letter)
+                if counts[letter] == sc:
+                    if verbose: print(f'{letter}: {sc} verified')
+                else:
+                    valid = False
+                    print(f'{letter}: INVALID. True count: {counts[letter]}, Sentence says {sc}')
+                    incorrect_counts[letter] = sc
+            else:
+                valid = False
+                print(f'{letter}: Missing from sentence. True count {counts[letter]}')
+        # any remaining letters that were mentioned by the sentence by somehow
+        # not found in the function counts
+        if sentence_counts:
+            raise RuntimeError(
+                f'Sentence mentions {len(sentence_counts)} that were not found by function.\n{sentence_counts}'
+            )
+
+        return valid
+
+
+
 
 if __name__ == '__main__':
-    ag = Autogram('Spam, Spam, Spam,', 'eggs, and Spam.')
-    ag.include_final_and = False
-    ag.search()
+    sentences = [
+        """Spam, Spam, Spam, six a's, two d's, twenty e's, seven f's, four g's, 
+        five h's, ten i's, two l's, five m's, seven n's, six o's, five p's, 
+        six r's, thirty-one s's, twelve t's, three u's, eight v's, five w's, 
+        four x's, three y's, eggs, and Spam.""",
+        """twenty e, four f, one g, five h, three i, one l, ten n, seven o, 
+        seven r, three s, nine t, three u, four v, three w, one x, two y""",
+        """The output of this Python script is composed of two a's, three c's, 
+        three d's, thirty-one e's, nine f's, three g's, ten h's, twelve i's, 
+        two l's, two m's, fourteen n's, fourteen o's, five p's, eight r's, 
+        twenty-seven s's, twenty-five t's, five u's, eight v's, seven w's, 
+        one x, and five y's.""",
+        """This sentence contains three a's, three c's, two d's, twenty-seven e's, 
+        four f's, one g, five h's, eleven i's, two l's, sixteen n's, seven o's, 
+        five r's, twenty-nine s's, sixteen t's, two u's, six v's, six w's, six x's, 
+        and three y's.""",
+        """The quick brown fox jumped over alphabet soup containing five a's, three b's, 
+        three c's, three d's, thirty-two e's, six f's, two g's, ten h's, twelve i's, 
+        two j's, two k's, three l's, two m's, sixteen n's, sixteen o's, four p's, 
+        two q's, thirteen r's, thirty-four s's, twenty-seven t's, seven u's, seven v's, 
+        ten w's, six x's, four y's, and one z.""",
+    ]
+    for i, sentence in enumerate(sentences):
+        print(f'\n----------------- sentence {i+1} -----------------')
+        print(sentence)
+        is_valid = Autogram.validate(sentence, verbose=True)
+        print('Valid!' if is_valid else 'Invalid!')
