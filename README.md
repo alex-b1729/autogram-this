@@ -69,14 +69,14 @@ python3 -m autogramthis "Spam, Spam, Spam" -s "eggs, and Spam." --no-and
 > `Spam, Spam, Spam, six a's, two d's, twenty e's, seven f's, four g's, five h's, ten i's, two l's, five m's, seven n's, six o's, five p's, six r's, thirty-one s's, twelve t's, three u's, eight v's, five w's, four x's, three y's, eggs, and Spam.`
 
 ### Include punctuation
-The script can search for and validate autograms with the characters `,-'.!`.
-When listing their counts in the sentence their full names are written as 'comma', 'hyphen', 'apostrophe', 'period'.
-The exception is the exclamation point (`!`) character which is represented as '!' since that is how it is used in
+The script can search for and validate autograms that include the count of the characters `,-'.!`.
+In the sentence their full names are written as 'comma', 'hyphen', 'apostrophe', 'period'.
+The exception is the exclamation point (`!`) which is written as '!' since that's how it's used in
 [Lee Sallow's autogram](https://web.archive.org/web/20130926213111/http://www.fatrazie.com/EWpangram.html) in 
 Hofstadter's 1982 "Metamagical Themas" column in Scientific American. 
 
 ```commandline
-python3 -m autogramthis 'An autogram with punctuation' --include-punctuation
+python3 -m autogramthis 'An autogram with punctuation includes' --include-punctuation
 ```
 > `An autogram with punctuation includes eight a's, four c's, four d's, thirty-three e's, ten f's, six g's, twelve h's, eighteen i's, four l's, four m's, nineteen n's, sixteen o's, six p's, fourteen r's, thirty-two s's, twenty-eight t's, twelve u's, six v's, eight w's, five x's, seven y's, twenty-four comma's, five hyphen's, twenty-four apostrophe's, and one period.`
 
@@ -109,7 +109,9 @@ python3 -m autogramthis "The quick brown fox jumped over alphabet soup containin
 ```
 > `The quick brown fox jumped over alphabet soup containing five a's, three b's, three c's, three d's, thirty-two e's, six f's, two g's, ten h's, twelve i's, two j's, two k's, three l's, two m's, sixteen n's, sixteen o's, four p's, two q's, thirteen r's, thirty-four s's, twenty-seven t's, seven u's, seven v's, ten w's, six x's, four y's, and one z.`
 
-Note that pangrams with punctuation included will not force include all punctuation.
+__Note__ that pangrams with punctuation included will not force include additional characters but will still count
+the ones that occur. 
+
 
 ### Validation
 Validate if a string is an autogram using `--validate "<sentence to validate>"` in the command line or 
@@ -201,4 +203,4 @@ __Static Methods__
 - Lee Sallows paper on [reflexicons](https://www.leesallows.com/files/Reflexicons%20NEW(4c).pdf). 
   Includes lots of fun variants and tips on searching for autograms. 
 - [Autogram](https://en.wikipedia.org/wiki/Autogram) on Wikipedia
-- [autograms.net](https://autograms.net/) has lots of autograms.
+- [autograms.net](https://autograms.net/) has lots of autograms in english and other languages.
