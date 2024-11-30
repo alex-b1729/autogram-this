@@ -196,24 +196,26 @@ class Autogram(object):
         self.is_pangram = False
         self.include_punctuation = False
 
-        self.countable_chars = LETTER_CHARS
+        self.countable_chars: str = self.get_countable_chars()
+        self.counts: dict[str, int] = self.get_counts()
 
-        self.counts: dict[str, int] = defaultdict(int)
-
-    def init_counts(self):
+    def get_counts(self) -> dict[str, int]:
+        counts = None
         if self.is_pangram:
-            self.counts = {letter: 1 for letter in LETTER_CHARS}
+            counts = {letter: 1 for letter in LETTER_CHARS}
         else:
             if self.prefix or self.suffix:
-                self.counts = self.count_occurrences(self.prefix + self.suffix)
+                counts = self.count_occurrences(self.prefix + self.suffix)
             else:
-                self.counts = defaultdict(int)
-                self.counts[random.choice(LETTER_CHARS)] += 1
+                counts = defaultdict(int)
+                counts[random.choice(LETTER_CHARS)] += 1
+        return counts
 
-    def init_countable_chars(self):
-        self.countable_chars = LETTER_CHARS
+    def get_countable_chars(self) -> str:
+        countable_chars = LETTER_CHARS
         if self.include_punctuation:
-            self.countable_chars += PUNCTUATION_CHARS
+            countable_chars += PUNCTUATION_CHARS
+        return countable_chars
 
     def counts_as_phrases(self, counts: dict[str, int]) -> list[str]:
         return [f'''{num_2_words(count)} {CHAR_TO_WORD[char]}{"'s" * (count > 1) if self.make_plural else ''}'''
@@ -257,8 +259,8 @@ class Autogram(object):
         self.epoch += 1
 
     def search(self):
-        self.init_countable_chars()
-        self.init_counts()
+        self.countable_chars = self.get_countable_chars()
+        self.counts = self.get_counts()
         self.epoch = 0
         sys.stdout.write(f'Iterating sentences to find an {"autogram" if not self.is_pangram else "pangram"}\n')
         sys.stdout.write(f'Starting sentence: {self.sentence}\n')
