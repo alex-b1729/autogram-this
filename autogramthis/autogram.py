@@ -248,40 +248,82 @@ class Autogram(object):
             if s.lower().find(char) != -1
         }
 
-    def update_counts(self):
+    def update_counts(self, rand_char: bool = False):
         # Lee Sallows suggests alternately updating all character counts or a random character's count
-        if self.update_all_counts:
+        if not rand_char:
             self.counts = self.count_occurrences(self.sentence)
         else:
             char = random.choice(list(self.counts.keys()))
             self.counts[char] = self.sentence.lower().count(char)
-        self.update_all_counts = not self.update_all_counts
         self.epoch += 1
 
-    def search(self):
+    def counts_to_str(self) -> str:
+        return ''.join([str(self.counts[char]) if char in self.counts else '0' for char in self.countable_chars])
+
+    def search(self, find_cycle: bool = False):
         self.countable_chars = self.get_countable_chars()
         self.counts = self.get_counts()
         self.epoch = 0
-        sys.stdout.write(f'Iterating sentences to find an {"autogram" if not self.is_pangram else "pangram"}\n')
+        search_complete = False
+
+        update_random_char = False
+        prev_sentences: set[str] = set()  # track previous counts if looking for a cycle
+        cycle_sentences: list[str] = []
+        in_cycle = False
+
+        sys.stdout.write(
+            f'Iterating sentences to find '
+            f'{"a cycle" if find_cycle else ("an autogram" if not self.is_pangram else "a pangram")}\n'
+        )
         sys.stdout.write(f'Starting sentence: {self.sentence}\n')
         print_epoch_counter = 0
         t0 = perf_counter()
 
-        while not self.is_autogram:
-            self.update_counts()
+        while not search_complete:
+            self.update_counts(rand_char=update_random_char)
+
+            search_complete = self.is_autogram
+            if find_cycle:
+                search_complete = self.sentence in cycle_sentences
+
+            if in_cycle:
+                cycle_sentences.append(self.sentence)
+            elif find_cycle:
+                count_str = self.counts_to_str()
+                in_cycle = count_str in prev_sentences
+                prev_sentences.add(count_str)
+                if in_cycle:  # first time cycle is found
+                    sys.stdout.write(f'Found a cycle of len {len(prev_sentences) - 1} or smaller\n')
+
             if print_epoch_counter > 9998:
                 sys.stdout.write(f'\rEpoch: {self.epoch:,}')
                 print_epoch_counter = -1
+                # assume cycles aren't longer than ~5k sentences and reset every 10k
+                if find_cycle and not in_cycle:
+                    prev_sentences = set()
+
+            if not find_cycle:
+                update_random_char = not update_random_char
+
             print_epoch_counter += 1
 
         t1 = perf_counter()
         t = t1 - t0
         sys.stdout.write(f'\rEpoch: {self.epoch:,}\n')
-        sys.stdout.write('Found an autogram!\n')
+        if find_cycle:
+            sys.stdout.write(f'Found cycle of period {len(cycle_sentences) - 1}\n')
+        else:
+            sys.stdout.write('Found an autogram!\n')
+
         sys.stdout.write(f'Total time: {t // 60:.0f} minutes {t % 60:.0f} seconds\n')
-        sys.stdout.write(f'Raw count dictionary: {self.counts}\n')
-        sys.stdout.write(f'\n{self.sentence}\n\n')
-        return self.sentence
+
+        if find_cycle:
+            sys.stdout.write(''.join([f'Sentence {i}: {sentence}\n' for i, sentence in enumerate(cycle_sentences)]))
+            return cycle_sentences
+        else:
+            sys.stdout.write(f'Raw count dictionary: {self.counts}\n')
+            sys.stdout.write(f'\n{self.sentence}\n\n')
+            return self.sentence
 
     @staticmethod
     def find_counts_and_chars(
