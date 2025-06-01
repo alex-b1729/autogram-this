@@ -386,6 +386,7 @@ impl Autogram {
         println!("Starting sentence: {}", self.sentence());
         println!();
 
+        let start_time = Instant::now();
         let mut handles = vec![];
         
         for thread_id in 0..num_threads {
@@ -422,8 +423,31 @@ impl Autogram {
 
         let result = if let Ok((thread_id, result)) = result_rx.recv() {
             stop_flag.store(true, Ordering::Relaxed);
+            let elapsed = start_time.elapsed();
+            
+            // Calculate total iterations across all threads
+            let total_iterations = if let Ok(epochs) = thread_epochs.lock() {
+                epochs.iter().map(|epoch| epoch.load(Ordering::Relaxed) as u64).sum::<u64>()
+            } else {
+                0
+            };
+            
             println!("\n🎉 Thread {} found the solution!", thread_id + 1);
             println!("{}", result);
+            
+            // Report performance metrics
+            let elapsed_secs = elapsed.as_secs_f64();
+            let iterations_per_second = if elapsed_secs > 0.0 {
+                total_iterations as f64 / elapsed_secs
+            } else {
+                0.0
+            };
+            
+            println!("Total iterations across all threads: {}", format_with_commas(total_iterations as i32));
+            println!("Total time: {:.3} seconds ({} minutes {} seconds)", 
+                elapsed_secs, elapsed.as_secs() / 60, elapsed.as_secs() % 60);
+            println!("Total iterations per second: {}", format_with_commas(iterations_per_second as i32));
+            
             result
         } else {
             "No solution found".to_string()
