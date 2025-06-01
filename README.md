@@ -1,23 +1,19 @@
 # Autogram This
 
-A Python script that searches for and validates [autograms](https://en.wikipedia.org/wiki/Autogram).
+A program that searches for and validates [autograms](https://en.wikipedia.org/wiki/Autogram), for example:
 
-```commandline
-python3 -m autogramthis "The output of this Python script is composed of"
-```
-> `The output of this Python script is composed of two a's, three c's, three d's, thirty-one e's, nine f's, three g's, ten h's, twelve i's, two l's, two m's, fourteen n's, fourteen o's, five p's, eight r's, twenty-seven s's, twenty-five t's, five u's, eight v's, seven w's, one x, and five y's.`
+> This example autogram has nine o's, two f's, seventeen t's, three m's, thirty-one s's, three y's, seven h's, seven i's, seven w's, two p's, six a's, two d's, seven v's, two l's, three u's, seven r's, two g's, twenty-nine e's, sixteen n's, and four x's.
 
-```commandline
-python3 -m autogramthis --validate "The output of..."
-Valid autogram!
-```
+
+
 
 From [Wikipedia](https://en.wikipedia.org/wiki/Autogram):
 > An autogram is a sentence that describes itself in the sense of providing an inventory of its own characters.
 
 - [Usage](#usage)
-  - [Command Line](#command-line)
-  - [Python](#python)
+  - [Python CLI](#python-cli)
+  - [Rust CLI](#rust-cli)
+  - [Python module](#python-module)
 - [Capabilities](#capabilities)
   - [Add a suffix to the autogram](#add-a-suffix-to-the-autogram)
   - [Include punctuation](#include-punctuation)
@@ -36,7 +32,8 @@ git clone git@github.com:alex-b1729/autogram-this.git
 cd ~/autogram-this
 ```
 
-### Command Line
+### Python CLI
+
 ```commandline
 $ python3 -m autogramthis "This sentence contains"
 ```
@@ -51,7 +48,34 @@ Raw count dictionary: {'a': 3, 'c': 3, 'd': 2, 'e': 27, 'f': 4, 'g': 1, 'h': 5, 
 This sentence contains three a's, three c's, two d's, twenty-seven e's, four f's, one g, five h's, eleven i's, two l's, sixteen n's, seven o's, five r's, twenty-nine s's, sixteen t's, two u's, six v's, six w's, six x's, and three y's.
 ```
 
-### Python
+### Rust CLI
+
+A *vastly* faster multi-threaded Rust version is also available. You need to have a Rust compiler [installed](https://www.rust-lang.org/tools/install).
+
+```commandline
+# build
+cd rust
+cargo build --release
+
+# run
+$ target/release/autogramthis "This test of the Rust version has"
+Starting parallel search with 48 threads
+Iterating sentences to find an autogram
+Starting sentence: This test of the Rust version has one n, one a, five t's, one f, three e's, two i's, two o's, two r's, three h's, one u, one v, and five s's.
+
+T1: 1,168 | T2: 2,245 | T3: 2,267 | T4: 25,109 | T5: 2,230 | T6: 26,498 | T7: 1,147 | T8: 26,185 | T9: 21,880 | T10: 2,238 | T11: 25,999 | T12: 2,220 | T13: 16,620 | T14: 22,015 | T15: 30,056 | T16: 26,057 | T17: 2,224 | T18: 23,504 | T19: 2,202 | T20: 2,197 | T21: 2,173 | T22: 28,605 | T23: 23,451 | T24: 2,228 | T25: 2,234 | T26: 21,650 | T27: 2,254 | T28: 2,221 | T29: 2,198 | T30: 23,908 | T31: 25,116 | T32: 18,105 | T33: 26,475 | T34: 28,068 | T35: 23,638 | T36: 2,195 | T37: 20,529 | T38: 2,202 | T39: 2,249 | T40: 15,781 | T41: 2,227 | T42:T1: 2,463 | T2: 4,749 | T3: 4,784 | T4: 54,964 | T5: 4,754 | T6: 56,272 | T7: 2,439 | T8: 55,006 | T9: 51,658 | T10: 4,746 | T11: 55,447 | T12: 4,701 | T13: 46,082 | T14: 50,878 | T15: 59,773 | T16: 55,124 | T17: 4,715 | T18: 52,156 | T19: 4,716 | T20: 4,690 | T21: 4,658 | T22: 57,340 | T23: 52,676 | T24: 4,753 | T25: 4,785 | T26: 50,702 | T27: 4,783 | T28: 4,751 | T29: 4,666 | T30: 52,868 | T31: 54,566 | T32: 46,790 | T33: 55,691 | T34: 57,398 | T35: 52,869 | T36: 4,681 | T37: 50,447 | T38: 4,712 | T39: 4,811 | T40: 45,304 | T41: 4,746 | T42: 4,687 | T43: 4,654 | T44: 4,648 | T45: 2,399 | T46: 50,053 | T47: 4,752 | T48: 46,091 |
+🎉 Thread 9 found the solution!
+Found an autogram!
+Raw count dictionary: {'x': 1, 'y': 3, 'w': 5, 'd': 2, 'l': 2, 't': 18, 'i': 11, 'h': 9, 'g': 4, 'a': 3, 'n': 15, 'f': 8, 'r': 7, 's': 25, 'e': 29, 'v': 7, 'u': 4, 'o': 8}
+
+This test of the Rust version has one x, three y's, five w's, two d's, two l's, eighteen t's, eleven i's, nine h's, four g's, three a's, fifteen n's, eight f's, seven r's, twenty-five s's, twenty-nine e's, seven v's, four u's, and eight o's.
+
+Total iterations across all threads: 1,641,373
+Total time: 1.231 seconds (0 minutes 1 seconds)
+Total iterations per second: 1,333,905
+```
+
+### Python module
 ```python
 from autogramthis import Autogram
 
