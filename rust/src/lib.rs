@@ -1,12 +1,15 @@
+use crossbeam::channel::unbounded;
+use rand::prelude::*;
+use regex::Regex;
 use std::collections::HashMap;
-use std::time::Instant;
 use std::io::{self, Write};
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, AtomicI32, Ordering}};
+use std::sync::{
+    atomic::{AtomicBool, AtomicI32, Ordering},
+    Arc, Mutex,
+};
 use std::thread;
 use std::time::Duration;
-use regex::Regex;
-use rand::prelude::*;
-use crossbeam::channel::unbounded;
+use std::time::Instant;
 
 pub const PUNCTUATION_CHARS: &str = ",-'.!";
 const LETTER_CHARS: &str = "abcdefghijklmnopqrstuvwxyz";
@@ -15,7 +18,7 @@ fn format_with_commas(n: i32) -> String {
     let s = n.to_string();
     let chars: Vec<char> = s.chars().collect();
     let mut result = String::new();
-    
+
     for (i, c) in chars.iter().enumerate() {
         if i > 0 && (chars.len() - i) % 3 == 0 {
             result.push(',');
@@ -136,11 +139,28 @@ pub fn num_to_words(num: i32) -> String {
     match num {
         0..=20 => INT_TO_WORD[num.to_string().as_str()].to_string(),
         21..=99 if num % 10 == 0 => INT_TO_WORD[num.to_string().as_str()].to_string(),
-        21..=99 => format!("{}-{}", INT_TO_WORD[(num / 10 * 10).to_string().as_str()], INT_TO_WORD[(num % 10).to_string().as_str()]),
-        100..=999 if num % 100 == 0 => format!("{} hundred", INT_TO_WORD[(num / 100).to_string().as_str()]),
-        100..=999 => format!("{} hundred and {}", INT_TO_WORD[(num / 100).to_string().as_str()], num_to_words(num % 100)),
-        1000..=9999 if num % 1000 == 0 => format!("{} thousand", INT_TO_WORD[(num / 1000).to_string().as_str()]),
-        1000..=9999 => format!("{} thousand {}", INT_TO_WORD[(num / 1000).to_string().as_str()], num_to_words(num % 1000)),
+        21..=99 => format!(
+            "{}-{}",
+            INT_TO_WORD[(num / 10 * 10).to_string().as_str()],
+            INT_TO_WORD[(num % 10).to_string().as_str()]
+        ),
+        100..=999 if num % 100 == 0 => {
+            format!("{} hundred", INT_TO_WORD[(num / 100).to_string().as_str()])
+        }
+        100..=999 => format!(
+            "{} hundred and {}",
+            INT_TO_WORD[(num / 100).to_string().as_str()],
+            num_to_words(num % 100)
+        ),
+        1000..=9999 if num % 1000 == 0 => format!(
+            "{} thousand",
+            INT_TO_WORD[(num / 1000).to_string().as_str()]
+        ),
+        1000..=9999 => format!(
+            "{} thousand {}",
+            INT_TO_WORD[(num / 1000).to_string().as_str()],
+            num_to_words(num % 1000)
+        ),
         10000 => "ten thousand".to_string(),
         _ => "more than ten thousand".to_string(),
     }
@@ -150,9 +170,12 @@ pub fn words_to_num(words: &str) -> Result<i32, String> {
     let words_lower = words.to_lowercase();
     let word_list: Vec<&str> = words_lower.split(&['-', ' '][..]).collect();
     if word_list.len() > 2 {
-        return Err(format!("Cannot yet parse number words of greater than 2 words. {:?} is too long.", word_list));
+        return Err(format!(
+            "Cannot yet parse number words of greater than 2 words. {:?} is too long.",
+            word_list
+        ));
     }
-    
+
     let mut num = 0;
     for word in word_list {
         if let Some(&val) = WORD_TO_INT.get(word) {
@@ -219,11 +242,16 @@ impl Autogram {
     }
 
     fn counts_as_phrases(&self, counts: &HashMap<char, i32>) -> Vec<String> {
-        counts.iter()
+        counts
+            .iter()
             .filter(|(_, &count)| count != 0)
             .map(|(&ch, &count)| {
                 let word = CHAR_TO_WORD[&ch];
-                let plural = if self.make_plural && count > 1 { "'s" } else { "" };
+                let plural = if self.make_plural && count > 1 {
+                    "'s"
+                } else {
+                    ""
+                };
                 format!("{} {}{}", num_to_words(count), word, plural)
             })
             .collect()
@@ -238,13 +266,13 @@ impl Autogram {
         };
 
         if phrases.len() > 1 {
-            s.push_str(&phrases[..phrases.len()-1].join(", "));
+            s.push_str(&phrases[..phrases.len() - 1].join(", "));
             if self.include_final_and {
                 s.push_str(", and ");
             } else {
                 s.push_str(", ");
             }
-            s.push_str(&phrases[phrases.len()-1]);
+            s.push_str(&phrases[phrases.len() - 1]);
         } else if !phrases.is_empty() {
             s.push_str(&phrases[0]);
         }
@@ -265,10 +293,15 @@ impl Autogram {
 
     pub fn count_occurrences(&self, s: &str) -> HashMap<char, i32> {
         let lower_s = s.to_lowercase();
-        self.countable_chars.chars()
+        self.countable_chars
+            .chars()
             .filter_map(|ch| {
                 let count = lower_s.matches(ch).count() as i32;
-                if count > 0 { Some((ch, count)) } else { None }
+                if count > 0 {
+                    Some((ch, count))
+                } else {
+                    None
+                }
             })
             .collect()
     }
@@ -281,14 +314,18 @@ impl Autogram {
             if !keys.is_empty() {
                 let mut rng = thread_rng();
                 let ch = keys.choose(&mut rng).unwrap();
-                self.counts.insert(*ch, self.sentence().to_lowercase().matches(*ch).count() as i32);
+                self.counts.insert(
+                    *ch,
+                    self.sentence().to_lowercase().matches(*ch).count() as i32,
+                );
             }
         }
         self.epoch += 1;
     }
 
     fn counts_to_str(&self) -> String {
-        self.countable_chars.chars()
+        self.countable_chars
+            .chars()
             .map(|ch| self.counts.get(&ch).unwrap_or(&0).to_string())
             .collect::<Vec<_>>()
             .join("")
@@ -305,12 +342,18 @@ impl Autogram {
         let mut cycle_sentences = Vec::new();
         let mut in_cycle = false;
 
-        println!("Iterating sentences to find {}", 
-            if find_cycle { "a cycle" } 
-            else if self.is_pangram { "a pangram" } 
-            else { "an autogram" });
+        println!(
+            "Iterating sentences to find {}",
+            if find_cycle {
+                "a cycle"
+            } else if self.is_pangram {
+                "a pangram"
+            } else {
+                "an autogram"
+            }
+        );
         println!("Starting sentence: {}", self.sentence());
-        
+
         let mut print_epoch_counter = 0;
         let start_time = Instant::now();
 
@@ -330,7 +373,10 @@ impl Autogram {
                 in_cycle = prev_sentences.contains(&count_str);
                 prev_sentences.insert(count_str);
                 if in_cycle {
-                    println!("Found a cycle of len {} or smaller", prev_sentences.len() - 1);
+                    println!(
+                        "Found a cycle of len {} or smaller",
+                        prev_sentences.len() - 1
+                    );
                 }
             }
 
@@ -352,7 +398,7 @@ impl Autogram {
 
         let elapsed = start_time.elapsed();
         println!("\rEpoch: {}", format_with_commas(self.epoch));
-        
+
         if find_cycle {
             println!("Found cycle of period {}", cycle_sentences.len() - 1);
             for (i, sentence) in cycle_sentences.iter().enumerate() {
@@ -361,7 +407,11 @@ impl Autogram {
             cycle_sentences.join("\n")
         } else {
             println!("Found an autogram!");
-            println!("Total time: {} minutes {} seconds", elapsed.as_secs() / 60, elapsed.as_secs() % 60);
+            println!(
+                "Total time: {} minutes {} seconds",
+                elapsed.as_secs() / 60,
+                elapsed.as_secs() % 60
+            );
             println!("Raw count dictionary: {:?}", self.counts);
             println!("\n{}\n", self.sentence());
             self.sentence()
@@ -371,35 +421,45 @@ impl Autogram {
     pub fn search_parallel(&mut self, find_cycle: bool) -> String {
         let num_threads = num_cpus::get();
         println!("Starting parallel search with {} threads", num_threads);
-        
+
         self.countable_chars = self.get_countable_chars();
         self.counts = self.get_counts();
-        
+
         let (result_tx, result_rx) = unbounded();
         let stop_flag = Arc::new(AtomicBool::new(false));
-        let thread_epochs = Arc::new(Mutex::new((0..num_threads).map(|_| AtomicI32::new(0)).collect::<Vec<_>>()));
-        
-        println!("Iterating sentences to find {}", 
-            if find_cycle { "a cycle" } 
-            else if self.is_pangram { "a pangram" } 
-            else { "an autogram" });
+        let thread_epochs = Arc::new(Mutex::new(
+            (0..num_threads)
+                .map(|_| AtomicI32::new(0))
+                .collect::<Vec<_>>(),
+        ));
+
+        println!(
+            "Iterating sentences to find {}",
+            if find_cycle {
+                "a cycle"
+            } else if self.is_pangram {
+                "a pangram"
+            } else {
+                "an autogram"
+            }
+        );
         println!("Starting sentence: {}", self.sentence());
         println!();
 
         let start_time = Instant::now();
         let mut handles = vec![];
-        
+
         for thread_id in 0..num_threads {
             let mut ag = Autogram::new(&self.prefix, &self.suffix);
             ag.make_plural = self.make_plural;
             ag.include_final_and = self.include_final_and;
             ag.is_pangram = self.is_pangram;
             ag.include_punctuation = self.include_punctuation;
-            
+
             let result_tx = result_tx.clone();
             let stop_flag = Arc::clone(&stop_flag);
             let thread_epochs = Arc::clone(&thread_epochs);
-            
+
             let handle = thread::spawn(move || {
                 ag.search_worker(thread_id, find_cycle, result_tx, stop_flag, thread_epochs)
             });
@@ -424,17 +484,20 @@ impl Autogram {
         let result = if let Ok((thread_id, result)) = result_rx.recv() {
             stop_flag.store(true, Ordering::Relaxed);
             let elapsed = start_time.elapsed();
-            
+
             // Calculate total iterations across all threads
             let total_iterations = if let Ok(epochs) = thread_epochs.lock() {
-                epochs.iter().map(|epoch| epoch.load(Ordering::Relaxed) as u64).sum::<u64>()
+                epochs
+                    .iter()
+                    .map(|epoch| epoch.load(Ordering::Relaxed) as u64)
+                    .sum::<u64>()
             } else {
                 0
             };
-            
+
             println!("\n🎉 Thread {} found the solution!", thread_id + 1);
             println!("{}", result);
-            
+
             // Report performance metrics
             let elapsed_secs = elapsed.as_secs_f64();
             let iterations_per_second = if elapsed_secs > 0.0 {
@@ -442,12 +505,22 @@ impl Autogram {
             } else {
                 0.0
             };
-            
-            println!("Total iterations across all threads: {}", format_with_commas(total_iterations as i32));
-            println!("Total time: {:.3} seconds ({} minutes {} seconds)", 
-                elapsed_secs, elapsed.as_secs() / 60, elapsed.as_secs() % 60);
-            println!("Total iterations per second: {}", format_with_commas(iterations_per_second as i32));
-            
+
+            println!(
+                "Total iterations across all threads: {}",
+                format_with_commas(total_iterations as i32)
+            );
+            println!(
+                "Total time: {:.3} seconds ({} minutes {} seconds)",
+                elapsed_secs,
+                elapsed.as_secs() / 60,
+                elapsed.as_secs() % 60
+            );
+            println!(
+                "Total iterations per second: {}",
+                format_with_commas(iterations_per_second as i32)
+            );
+
             result
         } else {
             "No solution found".to_string()
@@ -472,7 +545,7 @@ impl Autogram {
         self.countable_chars = self.get_countable_chars();
         self.counts = self.get_counts();
         self.epoch = 0;
-        
+
         let mut rng = thread_rng();
         if !self.is_pangram && self.prefix.is_empty() && self.suffix.is_empty() {
             let random_char = LETTER_CHARS.chars().choose(&mut rng).unwrap();
@@ -500,15 +573,22 @@ impl Autogram {
 
             if search_complete {
                 let result = if find_cycle {
-                    format!("Found cycle of period {}\n{}", 
+                    format!(
+                        "Found cycle of period {}\n{}",
                         cycle_sentences.len() - 1,
-                        cycle_sentences.iter().enumerate()
+                        cycle_sentences
+                            .iter()
+                            .enumerate()
                             .map(|(i, s)| format!("Sentence {}: {}", i, s))
                             .collect::<Vec<_>>()
-                            .join("\n"))
+                            .join("\n")
+                    )
                 } else {
-                    format!("Found an autogram!\nRaw count dictionary: {:?}\n\n{}\n", 
-                        self.counts, self.sentence())
+                    format!(
+                        "Found an autogram!\nRaw count dictionary: {:?}\n\n{}\n",
+                        self.counts,
+                        self.sentence()
+                    )
                 };
                 let _ = result_tx.send((thread_id, result));
                 return;
@@ -524,7 +604,7 @@ impl Autogram {
                     cycle_sentences.clear();
                     cycle_sentences.push(self.sentence());
                 }
-                
+
                 if prev_sentences.len() > 5000 {
                     prev_sentences.clear();
                 }
@@ -547,20 +627,28 @@ impl Autogram {
         }
     }
 
-    pub fn find_counts_and_chars(sentence: &str, include_punctuation: bool) -> Vec<(String, String)> {
+    pub fn find_counts_and_chars(
+        sentence: &str,
+        include_punctuation: bool,
+    ) -> Vec<(String, String)> {
         let single_word_numbers: Vec<&str> = WORD_TO_INT.keys().cloned().collect();
-        let leading_word_numbers: Vec<&str> = WORD_TO_INT.iter()
+        let leading_word_numbers: Vec<&str> = WORD_TO_INT
+            .iter()
             .filter(|(_, &val)| val >= 20)
             .map(|(&key, _)| key)
             .collect();
-        
+
         let leading_word_or = leading_word_numbers.join("|");
         let single_word_or = single_word_numbers.join("|");
-        
-        let number_re = format!(r"(?P<number>(?:(?:{})[-\s]?)?(?:{}))", leading_word_or, single_word_or);
-        
+
+        let number_re = format!(
+            r"(?P<number>(?:(?:{})[-\s]?)?(?:{}))",
+            leading_word_or, single_word_or
+        );
+
         let punctuation_re = if include_punctuation {
-            let punct_words: Vec<&str> = WORD_TO_CHAR.keys()
+            let punct_words: Vec<&str> = WORD_TO_CHAR
+                .keys()
                 .filter(|&&word| !LETTER_CHARS.contains(word))
                 .cloned()
                 .collect();
@@ -568,10 +656,10 @@ impl Autogram {
         } else {
             String::new()
         };
-        
+
         let char_re = format!(r"(?P<character>(?:{}[a-z]){{1}})'?(?=s)?s?", punctuation_re);
         let number_char_re = format!(r"\b{}\s{}", number_re, char_re);
-        
+
         let re = Regex::new(&number_char_re).unwrap();
         re.captures_iter(&sentence.to_lowercase())
             .filter_map(|cap| {
@@ -583,28 +671,41 @@ impl Autogram {
     }
 }
 
-pub fn validate_autogram(sentence: &str, include_punctuation: bool, verbose: bool, double_verbose: bool) -> bool {
+pub fn validate_autogram(
+    sentence: &str,
+    include_punctuation: bool,
+    verbose: bool,
+    double_verbose: bool,
+) -> bool {
     let sentence_lower = sentence.to_lowercase();
     let verbose = verbose || double_verbose;
-    
+
     let countable_chars = if include_punctuation {
         format!("{}{}", LETTER_CHARS, PUNCTUATION_CHARS)
     } else {
         LETTER_CHARS.to_string()
     };
-    
-    let counts: HashMap<char, i32> = countable_chars.chars()
+
+    let counts: HashMap<char, i32> = countable_chars
+        .chars()
         .filter_map(|ch| {
             let count = sentence_lower.matches(ch).count() as i32;
-            if count > 0 { Some((ch, count)) } else { None }
+            if count > 0 {
+                Some((ch, count))
+            } else {
+                None
+            }
         })
         .collect();
 
     let counts_and_chars = Autogram::find_counts_and_chars(sentence, include_punctuation);
-    
+
     let mut sentence_counts = HashMap::new();
     for (num_match, char_match) in counts_and_chars.iter() {
-        if let (Ok(num), Some(&ch)) = (words_to_num(num_match), WORD_TO_CHAR.get(char_match.as_str())) {
+        if let (Ok(num), Some(&ch)) = (
+            words_to_num(num_match),
+            WORD_TO_CHAR.get(char_match.as_str()),
+        ) {
             sentence_counts.insert(ch, num);
         }
     }
@@ -617,14 +718,19 @@ pub fn validate_autogram(sentence: &str, include_punctuation: bool, verbose: boo
 
     let mut valid = true;
     let mut sentence_counts_copy = sentence_counts.clone();
-    
+
     for (&ch, &count) in &counts {
         if let Some(sc) = sentence_counts_copy.remove(&ch) {
             if count == sc {
-                if verbose { println!("{}: {} verified", ch, sc); }
+                if verbose {
+                    println!("{}: {} verified", ch, sc);
+                }
             } else {
                 valid = false;
-                println!("{}: INVALID. True count: {}, Sentence says: {}.", ch, count, sc);
+                println!(
+                    "{}: INVALID. True count: {}, Sentence says: {}.",
+                    ch, count, sc
+                );
             }
         } else {
             valid = false;
@@ -633,8 +739,11 @@ pub fn validate_autogram(sentence: &str, include_punctuation: bool, verbose: boo
     }
 
     if !sentence_counts_copy.is_empty() {
-        panic!("Sentence mentions {} chars that were not found by validate().\n{:?}", 
-               sentence_counts_copy.len(), sentence_counts_copy);
+        panic!(
+            "Sentence mentions {} chars that were not found by validate().\n{:?}",
+            sentence_counts_copy.len(),
+            sentence_counts_copy
+        );
     }
 
     valid
