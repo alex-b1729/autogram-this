@@ -657,7 +657,7 @@ impl Autogram {
             String::new()
         };
 
-        let char_re = format!(r"(?P<character>(?:{}[a-z]){{1}})'?(?=s)?s?", punctuation_re);
+        let char_re = format!(r"(?P<character>(?:{}[a-z]){{1}})'?s?", punctuation_re);
         let number_char_re = format!(r"\b{}\s{}", number_re, char_re);
 
         let re = Regex::new(&number_char_re).unwrap();
