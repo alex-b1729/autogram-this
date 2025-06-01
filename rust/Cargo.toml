@@ -1,0 +1,16 @@
+[package]
+name = "autogramthis"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "autogramthis"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+regex = "1.5"
+rand = "0.8"
+lazy_static = "1.4"
+crossbeam = "0.8"
+num_cpus = "1.0"
