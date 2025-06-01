@@ -1,9 +1,11 @@
+use autogramthis::{validate_autogram, Autogram};
 use clap::Parser;
-use autogramthis::{Autogram, validate_autogram};
 
 #[derive(Parser)]
 #[command(name = "autogramthis")]
-#[command(about = "Search for autograms from an optional starting or ending string or validate an autogram")]
+#[command(
+    about = "Search for autograms from an optional starting or ending string or validate an autogram"
+)]
 struct Args {
     /// The text to begin the autogram sentence
     prefix: Option<String>,
@@ -50,7 +52,14 @@ fn main() {
 
     if let Some(sentence) = args.validate {
         let is_valid = validate_autogram(&sentence, args.include_punctuation, args.verbose, false);
-        println!("{}", if is_valid { "Valid autogram!" } else { "Invalid!" });
+        println!(
+            "{}",
+            if is_valid {
+                "Valid autogram!"
+            } else {
+                "Invalid!"
+            }
+        );
     } else {
         let prefix = args.prefix.unwrap_or_default();
         let mut ag = Autogram::new(&prefix, &args.suffix);
@@ -58,7 +67,7 @@ fn main() {
         ag.include_final_and = !args.no_and;
         ag.is_pangram = args.pangram;
         ag.include_punctuation = args.include_punctuation;
-        
+
         if args.single_thread {
             ag.search(args.find_cycle);
         } else {
