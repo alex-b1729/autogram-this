@@ -45,6 +45,10 @@ struct Args {
     /// Use single-threaded search instead of parallel
     #[arg(long)]
     single_thread: bool,
+
+    /// Sort letter counts alphabetically (Warning: much slower!)
+    #[arg(long)]
+    sort_letters: bool,
 }
 
 fn main() {
@@ -67,6 +71,7 @@ fn main() {
         ag.include_final_and = !args.no_and;
         ag.is_pangram = args.pangram;
         ag.include_punctuation = args.include_punctuation;
+        ag.sort_letters = args.sort_letters;
 
         if args.single_thread {
             ag.search(args.find_cycle);
