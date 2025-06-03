@@ -196,6 +196,7 @@ pub struct Autogram {
     pub include_final_and: bool,
     pub is_pangram: bool,
     pub include_punctuation: bool,
+    pub sort_letters: bool,
     pub countable_chars: String,
     pub counts: HashMap<char, i32>,
 }
@@ -211,6 +212,7 @@ impl Autogram {
             include_final_and: true,
             is_pangram: false,
             include_punctuation: false,
+            sort_letters: false,
             countable_chars: String::new(),
             counts: HashMap::new(),
         };
@@ -242,7 +244,7 @@ impl Autogram {
     }
 
     fn counts_as_phrases(&self, counts: &HashMap<char, i32>) -> Vec<String> {
-        counts
+        let mut phrases: Vec<_> = counts
             .iter()
             .filter(|(_, &count)| count != 0)
             .map(|(&ch, &count)| {
@@ -252,9 +254,14 @@ impl Autogram {
                 } else {
                     ""
                 };
-                format!("{} {}{}", num_to_words(count), word, plural)
+                (ch, format!("{} {}{}", num_to_words(count), word, plural))
             })
-            .collect()
+            .collect();
+
+        if self.sort_letters {
+            phrases.sort_by_key(|(ch, _)| *ch);
+        }
+        phrases.into_iter().map(|(_, phrase)| phrase).collect()
     }
 
     pub fn sentence(&self) -> String {
@@ -455,6 +462,7 @@ impl Autogram {
             ag.include_final_and = self.include_final_and;
             ag.is_pangram = self.is_pangram;
             ag.include_punctuation = self.include_punctuation;
+            ag.sort_letters = self.sort_letters;
 
             let result_tx = result_tx.clone();
             let stop_flag = Arc::clone(&stop_flag);
