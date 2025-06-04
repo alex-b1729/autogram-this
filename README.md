@@ -228,3 +228,4 @@ __Static Methods__
   Includes lots of fun variants and tips on searching for autograms. 
 - [Autogram](https://en.wikipedia.org/wiki/Autogram) on Wikipedia
 - [autograms.net](https://autograms.net/) has lots of autograms in english and other languages.
+- [Searching for Autograms](https://curiosityarb.blog/2024/12/01/searching-for-autograms.html) describes the autogram search algorithm used by this program. 
