@@ -2,10 +2,7 @@
 
 A program that searches for and validates [autograms](https://en.wikipedia.org/wiki/Autogram), for example:
 
-> This example autogram has nine o's, two f's, seventeen t's, three m's, thirty-one s's, three y's, seven h's, seven i's, seven w's, two p's, six a's, two d's, seven v's, two l's, three u's, seven r's, two g's, twenty-nine e's, sixteen n's, and four x's.
-
-
-
+> This example autogram has six a's, two d's, twenty-nine e's, two f's, two g's, seven h's, seven i's, two l's, three m's, sixteen n's, nine o's, two p's, seven r's, thirty-one s's, seventeen t's, three u's, seven v's, seven w's, four x's, and three y's.
 
 From [Wikipedia](https://en.wikipedia.org/wiki/Autogram):
 > An autogram is a sentence that describes itself in the sense of providing an inventory of its own characters.
